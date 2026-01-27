@@ -226,42 +226,56 @@
         document.getElementById('error-msg').innerText = msg;
     }
 
-    // --- HOST LOGIKA ---
     function createGame() {
-        const nick = document.getElementById('host-nick').value.trim();
-        const max = parseInt(document.getElementById('max-players').value);
-        if (!nick) return showError("Podaj nick!");
+    const nick = document.getElementById('host-nick').value.trim();
+    const max = parseInt(document.getElementById('max-players').value);
+    if (!nick) return showError("Podaj nick!");
+    
+    myNick = nick;
+    isHost = true;
+    gameState.maxPlayers = max;
+    
+    // Spróbujmy wygenerować kod i zainicjować Peer
+    roomCode = Math.floor(1000 + Math.random() * 9000).toString(); 
+    
+    // Jeśli Peer już istniał (np. po błędzie), zniszcz go
+    if (peer) peer.destroy();
+
+    peer = new Peer(PREFIX + roomCode);
+
+    // Wyświetl status ładowania
+    document.getElementById('display-code').innerText = "Ładowanie...";
+
+    peer.on('open', (id) => {
+        console.log("Połączono z serwerem PeerJS. ID pokoju: " + roomCode);
+        gameState.players = [{
+            peerId: id,
+            nick: myNick,
+            isReady: false,
+            isHost: true,
+            role: 'HINTER',
+            hintData: null
+        }];
+        setupLobbyUI();
+        showScreen('screen-lobby');
+        document.getElementById('display-code').innerText = roomCode;
         
-        myNick = nick;
-        isHost = true;
-        gameState.maxPlayers = max;
-        roomCode = Math.floor(1000 + Math.random() * 9000).toString(); 
-        
-        peer = new Peer(PREFIX + roomCode);
-
-        peer.on('open', (id) => {
-            gameState.players.push({
-                peerId: id,
-                nick: myNick,
-                isReady: false,
-                isHost: true,
-                role: 'HINTER',
-                hintData: null
-            });
-            setupLobbyUI();
-            showScreen('screen-lobby');
-            
-            peer.on('connection', (conn) => {
-                handleIncomingConnection(conn);
-            });
+        peer.on('connection', (conn) => {
+            handleIncomingConnection(conn);
         });
+    });
 
-        peer.on('error', (err) => {
-            if(err.type === 'unavailable-id') showError("Wylosowano zajęty kod. Spróbuj ponownie.");
-            else showError("Błąd sieci P2P.");
-        });
-    }
-
+    peer.on('error', (err) => {
+        console.error("Błąd PeerJS:", err.type);
+        if(err.type === 'unavailable-id') {
+            // Jeśli ID zajęte, spróbuj jeszcze raz automatycznie
+            createGame(); 
+        } else {
+            showError("Błąd połączenia: " + err.type);
+            document.getElementById('display-code').innerText = "BŁĄD";
+        }
+    });
+}
     function handleIncomingConnection(conn) {
         if (gameState.players.length >= gameState.maxPlayers || gameState.phase !== 'LOBBY') {
             conn.on('open', () => {

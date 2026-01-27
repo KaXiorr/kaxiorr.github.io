@@ -3,84 +3,375 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>P2P Gra GitHub - Test</title>
+    <title>Spektrum - Gra Multiplayer</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 20px; background: #f4f4f4; }
-        #status { font-weight: bold; color: #007bff; }
-        .box { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); display: inline-block; margin-top: 20px; }
-        input { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
-        button { padding: 8px 15px; cursor: pointer; background: #28a745; color: white; border: none; border-radius: 4px; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #2c3e50; color: white; text-align: center; margin: 0; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; background: #34495e; padding: 30px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        h1 { margin-top: 0; color: #f1c40f; }
+        h2 { border-bottom: 2px solid #7f8c8d; padding-bottom: 10px; }
+        
+        .screen { display: none; }
+        .active { display: block; }
+        
+        input, select { padding: 10px; border-radius: 5px; border: none; width: 80%; margin: 10px 0; font-size: 16px; }
+        button { padding: 12px 25px; margin: 10px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; transition: 0.2s; }
+        
+        .btn-primary { background: #27ae60; color: white; }
+        .btn-primary:hover { background: #2ecc71; }
+        .btn-secondary { background: #e67e22; color: white; }
+        .btn-secondary:hover { background: #d35400; }
+        .btn-disabled { background: #95a5a6; cursor: not-allowed; }
+
+        .player-list { list-style: none; padding: 0; text-align: left; }
+        .player-item { background: #ecf0f1; color: #2c3e50; margin: 5px 0; padding: 10px; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; }
+        .status-ready { color: #27ae60; font-weight: bold; }
+        .status-wait { color: #e74c3c; font-weight: bold; }
+        
+        .room-code { font-size: 2em; letter-spacing: 5px; background: #2c3e50; padding: 10px; border: 2px dashed #f1c40f; display: inline-block; margin: 10px 0; color: #f1c40f; }
+        #error-msg { color: #e74c3c; margin-top: 10px; min-height: 20px; }
     </style>
 </head>
 <body>
 
-    <h1>Test Połączenia P2P</h1>
-    <p>Status: <span id="status">Inicjalizacja...</span></p>
+<div class="container">
+    <h1>SPEKTRUM</h1>
+    <div id="error-msg"></div>
 
-    <div class="box">
-        <h3>Twój Identyfikator (ID):</h3>
-        <p id="my-id" style="font-size: 1.2em; color: #d63384;">Czekam na ID...</p>
-        <hr>
-        <h3>Połącz się z kimś:</h3>
-        <input type="text" id="peer-id-input" placeholder="Wpisz ID kolegi">
-        <button onclick="connectToPeer()">Połącz</button>
+    <div id="screen-menu" class="screen active">
+        <button class="btn-primary" onclick="showScreen('screen-host-setup')">Stwórz Grę</button>
+        <button class="btn-secondary" onclick="showScreen('screen-join-setup')">Dołącz do Gry</button>
     </div>
 
-    <div id="game-area" style="margin-top: 20px; display: none;">
-        <h3>Czat / Dane gry:</h3>
-        <input type="text" id="msg-input" placeholder="Wiadomość...">
-        <button onclick="sendData()">Wyślij dane</button>
-        <div id="messages" style="margin-top: 10px; color: #555;"></div>
+    <div id="screen-host-setup" class="screen">
+        <h2>Ustawienia Gry</h2>
+        <input type="text" id="host-nick" placeholder="Twój Nick" maxlength="12">
+        <br>
+        <label>Liczba graczy (2-5):</label>
+        <select id="max-players">
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+        </select>
+        <br>
+        <button class="btn-secondary" onclick="showScreen('screen-menu')">Wróć</button>
+        <button class="btn-primary" onclick="createGame()">Utwórz Lobby</button>
     </div>
 
-    <script>
-        const peer = new Peer(); // Tworzy nowe połączenie z darmowym serwerem PeerJS
-        let conn;
+    <div id="screen-join-setup" class="screen">
+        <h2>Dołącz do Gry</h2>
+        <input type="text" id="join-nick" placeholder="Twój Nick" maxlength="12">
+        <input type="number" id="join-code" placeholder="4-cyfrowy kod" max="9999">
+        <br>
+        <button class="btn-secondary" onclick="showScreen('screen-menu')">Wróć</button>
+        <button class="btn-primary" onclick="joinGame()">Dołącz</button>
+    </div>
 
-        // 1. Gdy serwer przydzieli nam unikalne ID
+    <div id="screen-lobby" class="screen">
+        <h2>Lobby</h2>
+        <p>Kod pokoju:</p>
+        <div id="display-code" class="room-code">----</div>
+        <p>Gracze: <span id="player-count">0/0</span></p>
+        
+        <ul id="players-list" class="player-list">
+            </ul>
+
+        <div id="controls-host" style="display:none;">
+            <p style="font-size: 0.9em; color: #bdc3c7;">Jesteś Hostem. Czekaj na wszystkich.</p>
+            <button id="btn-start" class="btn-disabled" onclick="startGame()" disabled>Rozpocznij Grę</button>
+        </div>
+
+        <div id="controls-client" style="display:none;">
+            <button id="btn-ready" class="btn-secondary" onclick="toggleReady()">Jestem Gotowy</button>
+        </div>
+    </div>
+
+    <div id="screen-game" class="screen">
+        <h2>Gra Rozpoczęta!</h2>
+        <p>Tutaj pojawi się mechanika gry...</p>
+    </div>
+</div>
+
+<script>
+    // --- ZMIENNE GLOBALNE ---
+    const PREFIX = "spektrum-game-"; // Unikalny prefiks dla tej aplikacji w PeerJS
+    let peer = null;
+    let myConn = null; // Dla klienta: połączenie z hostem
+    let hostConns = []; // Dla hosta: lista połączeń z klientami
+    
+    let isHost = false;
+    let myNick = "";
+    let roomCode = "";
+    let gameState = {
+        maxPlayers: 0,
+        players: [], // {id, nick, isReady, isHost}
+        started: false
+    };
+
+    // --- NAWIGACJA ---
+    function showScreen(id) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        document.getElementById('error-msg').innerText = "";
+    }
+
+    function showError(msg) {
+        document.getElementById('error-msg').innerText = msg;
+    }
+
+    // --- HOST LOGIKA ---
+    function createGame() {
+        const nick = document.getElementById('host-nick').value.trim();
+        const max = parseInt(document.getElementById('max-players').value);
+
+        if (!nick) return showError("Podaj nick!");
+        
+        myNick = nick;
+        isHost = true;
+        gameState.maxPlayers = max;
+        
+        // Generowanie kodu 4-cyfrowego
+        roomCode = Math.floor(1000 + Math.random() * 9000).toString(); 
+        
+        // Inicjalizacja PeerJS z ID równym kodowi
+        peer = new Peer(PREFIX + roomCode);
+
         peer.on('open', (id) => {
-            document.getElementById('my-id').innerText = id;
-            document.getElementById('status').innerText = "Gotowy do połączenia";
+            // Host dodaje samego siebie do listy
+            gameState.players.push({
+                peerId: id,
+                nick: myNick,
+                isReady: false, // Host domyślnie nie-gotowy (musi kliknąć start, ale traktujemy go jako ready przy starcie logicznym)
+                isHost: true
+            });
+            
+            setupLobbyUI();
+            showScreen('screen-lobby');
+            
+            // Host nasłuchuje na graczy
+            peer.on('connection', (conn) => {
+                handleIncomingConnection(conn);
+            });
         });
 
-        // 2. Obsługa przychodzącego połączenia (jeśli ktoś łączy się z nami)
-        peer.on('connection', (connection) => {
-            conn = connection;
-            setupConnection();
-            document.getElementById('status').innerText = "Połączono (jako Host)!";
+        peer.on('error', (err) => {
+            console.error(err);
+            if(err.type === 'unavailable-id') {
+                showError("Wylosowano zajęty kod. Spróbuj ponownie.");
+            } else {
+                showError("Błąd sieci P2P.");
+            }
         });
+    }
 
-        // 3. Funkcja łączenia się z innym graczem
-        function connectToPeer() {
-            const peerId = document.getElementById('peer-id-input').value;
-            conn = peer.connect(peerId);
-            setupConnection();
-            document.getElementById('status').innerText = "Łączenie...";
-        }
-
-        // 4. Konfiguracja wymiany danych
-        function setupConnection() {
-            document.getElementById('game-area').style.display = 'block';
-
+    function handleIncomingConnection(conn) {
+        if (gameState.players.length >= gameState.maxPlayers || gameState.started) {
+            // Odrzucenie - gra pełna lub trwa (opcjonalnie wysłać info i zamknąć)
             conn.on('open', () => {
-                document.getElementById('status').innerText = "Połączono!";
+                conn.send({type: 'ERROR', msg: 'Pokój pełny lub gra trwa'});
+                setTimeout(() => conn.close(), 500);
             });
-
-            conn.on('data', (data) => {
-                const msgBox = document.getElementById('messages');
-                msgBox.innerHTML += `<p>Otrzymano: <b>${data}</b></p>`;
-            });
+            return;
         }
 
-        // 5. Wysyłanie danych
-        function sendData() {
-            const val = document.getElementById('msg-input').value;
-            if (conn && conn.open) {
-                conn.send(val);
-                document.getElementById('messages').innerHTML += `<p>Wysłano: ${val}</p>`;
+        hostConns.push(conn);
+
+        conn.on('data', (data) => {
+            handleDataPacket(data, conn.peer);
+        });
+
+        conn.on('close', () => {
+            // Usunięcie gracza
+            gameState.players = gameState.players.filter(p => p.peerId !== conn.peer);
+            broadcastState();
+        });
+    }
+
+    // --- KLIENT LOGIKA ---
+    function joinGame() {
+        const nick = document.getElementById('join-nick').value.trim();
+        const code = document.getElementById('join-code').value.trim();
+
+        if (!nick || code.length !== 4) return showError("Podaj nick i poprawny kod!");
+
+        myNick = nick;
+        isHost = false;
+        
+        // Klient tworzy randomowe ID
+        peer = new Peer();
+
+        peer.on('open', () => {
+            // Łączenie z hostem
+            const hostId = PREFIX + code;
+            myConn = peer.connect(hostId);
+
+            myConn.on('open', () => {
+                showScreen('screen-lobby');
+                document.getElementById('display-code').innerText = code;
+                
+                // Wyślij prośbę o dołączenie
+                myConn.send({
+                    type: 'JOIN',
+                    nick: myNick
+                });
+            });
+
+            myConn.on('data', (data) => {
+                handleClientData(data);
+            });
+
+            myConn.on('error', (err) => showError("Błąd połączenia z hostem."));
+            
+            // Timeout check (prosty hack, bo peerjs nie zawsze rzuca błąd przy złym ID)
+            setTimeout(() => {
+                if(!myConn.open) showError("Nie znaleziono pokoju lub błąd połączenia.");
+            }, 3000);
+        });
+    }
+
+    // --- WSPÓLNA LOGIKA (PROTOKÓŁ) ---
+    
+    // Host przetwarza dane od klientów
+    function handleDataPacket(data, senderPeerId) {
+        if (data.type === 'JOIN') {
+            gameState.players.push({
+                peerId: senderPeerId,
+                nick: data.nick,
+                isReady: false,
+                isHost: false
+            });
+            broadcastState();
+        } 
+        else if (data.type === 'READY_TOGGLE') {
+            const player = gameState.players.find(p => p.peerId === senderPeerId);
+            if (player) {
+                player.isReady = data.state;
+                broadcastState();
             }
         }
-    </script>
+    }
+
+    // Klient przetwarza dane od Hosta
+    function handleClientData(data) {
+        if (data.type === 'UPDATE_STATE') {
+            gameState = data.state;
+            renderLobby();
+            
+            if (gameState.started) {
+                showScreen('screen-game');
+            }
+        }
+        else if (data.type === 'ERROR') {
+            showError(data.msg);
+            setTimeout(() => showScreen('screen-menu'), 2000);
+        }
+    }
+
+    // Host wysyła stan gry do wszystkich
+    function broadcastState() {
+        renderLobby(); // Host odświeża u siebie
+        // Host wysyła do klientów
+        hostConns.forEach(conn => {
+            if(conn.open) {
+                conn.send({
+                    type: 'UPDATE_STATE',
+                    state: gameState
+                });
+            }
+        });
+    }
+
+    // --- UI I INTERAKCJE ---
+
+    function setupLobbyUI() {
+        document.getElementById('display-code').innerText = roomCode;
+        if (isHost) {
+            document.getElementById('controls-host').style.display = 'block';
+            document.getElementById('controls-client').style.display = 'none';
+        } else {
+            document.getElementById('controls-host').style.display = 'none';
+            document.getElementById('controls-client').style.display = 'block';
+        }
+    }
+
+    function renderLobby() {
+        const list = document.getElementById('players-list');
+        list.innerHTML = "";
+        
+        let allReady = true;
+        let playerCount = gameState.players.length;
+
+        document.getElementById('player-count').innerText = `${playerCount}/${gameState.maxPlayers}`;
+
+        gameState.players.forEach(p => {
+            const li = document.createElement('li');
+            li.className = "player-item";
+            
+            let statusText = p.isHost ? "HOST" : (p.isReady ? "GOTOWY" : "CZEKA");
+            let statusClass = p.isReady ? "status-ready" : (p.isHost ? "status-ready" : "status-wait");
+
+            li.innerHTML = `
+                <span>${p.nick} ${p.peerId === peer.id ? '(Ty)' : ''}</span>
+                <span class="${statusClass}">${statusText}</span>
+            `;
+            list.appendChild(li);
+
+            // Sprawdź czy wszyscy (oprócz hosta, bo host decyduje przyciskiem) są gotowi
+            if (!p.isHost && !p.isReady) allReady = false;
+        });
+
+        // Logika przycisku Start dla Hosta
+        if (isHost) {
+            const btnStart = document.getElementById('btn-start');
+            // Host może wystartować tylko gdy jest min 2 graczy i wszyscy gotowi
+            if (playerCount >= 2 && allReady) {
+                btnStart.classList.remove('btn-disabled');
+                btnStart.classList.add('btn-primary');
+                btnStart.disabled = false;
+            } else {
+                btnStart.classList.add('btn-disabled');
+                btnStart.classList.remove('btn-primary');
+                btnStart.disabled = true;
+            }
+        }
+    }
+
+    function toggleReady() {
+        // Logika tylko dla klienta
+        if (isHost) return;
+
+        const myPlayer = gameState.players.find(p => p.peerId === peer.id);
+        const newState = !myPlayer.isReady;
+        
+        // Zmień lokalnie (dla responsywności UI) - ale prawda przyjdzie od hosta
+        // Lepiej wysłać request do hosta
+        myConn.send({
+            type: 'READY_TOGGLE',
+            state: newState
+        });
+        
+        // Zaktualizuj tekst przycisku
+        const btn = document.getElementById('btn-ready');
+        if (newState) {
+            btn.innerText = "Nie gotowy";
+            btn.classList.remove('btn-secondary');
+            btn.classList.add('btn-primary'); // green
+        } else {
+            btn.innerText = "Jestem Gotowy";
+            btn.classList.add('btn-secondary');
+            btn.classList.remove('btn-primary');
+        }
+    }
+
+    function startGame() {
+        if (!isHost) return;
+        gameState.started = true;
+        broadcastState();
+        showScreen('screen-game');
+    }
+
+</script>
+
 </body>
 </html>

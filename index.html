@@ -206,7 +206,9 @@
             const hostId = PREFIX + code;
             myConn = peer.connect(hostId);
 
+            // --- TU BYŁ BŁĄD ---
             myConn.on('open', () => {
+                setupLobbyUI(); // <--- DODAŁEM TĘ LINIJKĘ
                 showScreen('screen-lobby');
                 document.getElementById('display-code').innerText = code;
                 
@@ -216,6 +218,7 @@
                     nick: myNick
                 });
             });
+            // -------------------
 
             myConn.on('data', (data) => {
                 handleClientData(data);
@@ -223,9 +226,8 @@
 
             myConn.on('error', (err) => showError("Błąd połączenia z hostem."));
             
-            // Timeout check (prosty hack, bo peerjs nie zawsze rzuca błąd przy złym ID)
             setTimeout(() => {
-                if(!myConn.open) showError("Nie znaleziono pokoju lub błąd połączenia.");
+                if(!myConn || !myConn.open) showError("Nie znaleziono pokoju lub błąd połączenia.");
             }, 3000);
         });
     }

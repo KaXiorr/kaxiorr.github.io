@@ -3,410 +3,411 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Spektrum</title>
+    <title>Spektrum PRO - Multiplayer</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #2c3e50; color: white; text-align: center; margin: 0; padding: 20px; }
-        .container { max-width: 600px; margin: 0 auto; background: #34495e; padding: 30px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
-        h1 { margin-top: 0; color: #f1c40f; letter-spacing: 2px; }
-        h2 { border-bottom: 2px solid #7f8c8d; padding-bottom: 10px; }
+        :root { --primary: #27ae60; --secondary: #e67e22; --bg: #2c3e50; --panel: #34495e; --text: #ecf0f1; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; height: 100vh; overflow: hidden; }
         
+        /* Layout */
+        .sidebar { width: 200px; background: rgba(0,0,0,0.2); padding: 15px; display: flex; flex-direction: column; border-right: 1px solid #444; }
+        .sidebar-right { border-right: none; border-left: 1px solid #444; }
+        .main-content { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; align-items: center; }
+        
+        .container { width: 100%; max-width: 600px; background: var(--panel); padding: 25px; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.4); text-align: center; }
+
+        /* UI Elements */
+        h1 { color: #f1c40f; margin-top: 0; letter-spacing: 2px; }
         .screen { display: none; }
         .active { display: block; }
         
-        input[type="text"], input[type="number"], select { padding: 12px; border-radius: 5px; border: none; width: 80%; margin: 10px 0; font-size: 16px; text-align: center;}
-        button { padding: 12px 25px; margin: 10px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; transition: 0.2s; font-weight: bold; }
+        button { padding: 12px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; margin: 5px; transition: 0.3s; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-secondary { background: var(--secondary); color: white; }
+        .btn-disabled { background: #7f8c8d; cursor: not-allowed; }
         
-        .btn-primary { background: #27ae60; color: white; }
-        .btn-primary:hover { background: #2ecc71; }
-        .btn-secondary { background: #e67e22; color: white; }
-        .btn-secondary:hover { background: #d35400; }
-        .btn-disabled { background: #95a5a6; cursor: not-allowed; }
-        .btn-action { background: #3498db; color: white; }
+        input, select { padding: 10px; border-radius: 4px; border: none; margin: 10px 0; width: 80%; }
 
-        .player-list { list-style: none; padding: 0; text-align: left; }
-        .player-item { background: #ecf0f1; color: #2c3e50; margin: 5px 0; padding: 10px; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; }
-        .status-ready { color: #27ae60; font-weight: bold; }
-        .status-wait { color: #e74c3c; font-weight: bold; }
-        
-        .room-code { font-size: 2em; letter-spacing: 5px; background: #2c3e50; padding: 10px; border: 2px dashed #f1c40f; display: inline-block; margin: 10px 0; color: #f1c40f; }
-        #error-msg { color: #ff6b6b; margin-top: 10px; font-weight: bold; min-height: 20px; }
+        /* Tables & Lists */
+        .score-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #555; font-size: 0.9em; }
+        .status-item { padding: 8px; margin: 4px 0; border-radius: 4px; font-size: 0.85em; }
+        .status-done { background: rgba(39, 174, 96, 0.3); color: #2ecc71; }
+        .status-pending { background: rgba(231, 76, 60, 0.3); color: #e74c3c; }
 
-        /* SPECTRUM STYLES */
-        .spectrum-wrapper {
-            position: relative;
-            width: 100%;
-            height: 40px;
-            background: linear-gradient(to right, #e74c3c 0%, #f1c40f 50%, #3498db 100%);
-            border-radius: 20px;
-            margin: 40px 0 20px 0;
-            border: 3px solid #2c3e50;
-        }
+        /* Spectrum Components */
+        .spectrum-wrapper { position: relative; width: 100%; height: 40px; background: linear-gradient(to right, #e74c3c, #f1c40f, #3498db); border-radius: 20px; margin: 35px 0 15px; border: 3px solid #222; }
+        .marker { position: absolute; width: 6px; height: 50px; background: white; top: -5px; border: 2px solid #222; border-radius: 4px; transform: translateX(-50%); transition: left 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .marker-label { position: absolute; top: -35px; left: 50%; transform: translateX(-50%); font-weight: bold; color: #f1c40f; }
+        .guess-slider { -webkit-appearance: none; width: 100%; height: 40px; background: transparent; position: absolute; top: 0; left: 0; z-index: 5; cursor: pointer; }
+        .guess-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 30px; height: 30px; background: white; border-radius: 50%; border: 2px solid #333; }
 
-        .marker {
-            position: absolute;
-            width: 6px;
-            height: 50px;
-            background: white;
-            top: -5px;
-            border: 2px solid #333;
-            border-radius: 5px;
-            transform: translateX(-50%);
-            transition: left 0.3s ease;
-        }
-
-        .marker-label {
-            position: absolute;
-            top: -35px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-weight: bold;
-            color: #f1c40f;
-            font-size: 1.2em;
-            text-shadow: 1px 1px 2px black;
-        }
-
-        .category-box { background: #2c3e50; padding: 15px; margin: 15px 0; border-radius: 8px; border: 1px solid #7f8c8d; }
-        .cat-left { color: #ff6b6b; font-weight: bold; float: left; width: 45%; text-align: left;}
-        .cat-right { color: #54a0ff; font-weight: bold; float: right; width: 45%; text-align: right;}
-        .clearfix::after { content: ""; clear: both; display: table; }
-        
-        .hint-word { font-size: 1.8em; color: #f1c40f; margin: 20px 0; text-transform: uppercase; font-weight: 900; }
-
-        /* SLIDER */
-        .guess-slider {
-            -webkit-appearance: none;
-            width: 100%;
-            height: 40px;
-            background: transparent;
-            outline: none;
-            cursor: pointer;
-            position: absolute;
-            top: 0;
-            left: 0;
-            margin: 0;
-            z-index: 10;
-        }
-
-        .guess-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 30px;
-            height: 30px;
-            background: #fff;
-            border: 3px solid #2c3e50;
-            border-radius: 50%;
-            cursor: pointer;
-            box-shadow: 0 0 5px rgba(0,0,0,0.5);
-        }
+        .category-box { background: #2c3e50; padding: 15px; margin: 15px 0; border-radius: 8px; display: flex; justify-content: space-between; font-weight: bold; }
+        .room-code { font-size: 1.5em; color: #f1c40f; border: 2px dashed #f1c40f; padding: 10px; display: inline-block; margin: 10px; }
+        #error-msg { color: #ff6b6b; font-weight: bold; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>SPEKTRUM</h1>
-    <div id="error-msg"></div>
-
-    <div id="screen-menu" class="screen active">
-        <button class="btn-primary" onclick="showScreen('screen-host-setup')">Stwórz Grę</button>
-        <button class="btn-secondary" onclick="showScreen('screen-join-setup')">Dołącz do Gry</button>
-    </div>
-
-    <div id="screen-host-setup" class="screen">
-        <h2>Ustawienia</h2>
-        <input type="text" id="host-nick" placeholder="Twój Nick" maxlength="12">
-        <br>
-        <label>Gracze (2-5):</label>
-        <select id="max-players">
-            <option value="2">2</option><option value="3">3</option>
-            <option value="4">4</option><option value="5">5</option>
-        </select><br>
-        <button class="btn-secondary" onclick="showScreen('screen-menu')">Wróć</button>
-        <button class="btn-primary" onclick="createGame()">Utwórz</button>
-    </div>
-
-    <div id="screen-join-setup" class="screen">
-        <h2>Dołącz</h2>
-        <input type="text" id="join-nick" placeholder="Twój Nick" maxlength="12">
-        <input type="number" id="join-code" placeholder="4-cyfrowy kod">
-        <br>
-        <button class="btn-secondary" onclick="showScreen('screen-menu')">Wróć</button>
-        <button class="btn-primary" onclick="joinGame()">Dołącz</button>
-    </div>
-
-    <div id="screen-lobby" class="screen">
-        <h2>Lobby</h2>
-        <div id="display-code" class="room-code">----</div>
-        <p>Gracze: <span id="player-count">0/0</span></p>
-        <ul id="players-list" class="player-list"></ul>
-        <div id="controls-host" style="display:none;">
-            <button id="btn-start" class="btn-disabled" onclick="startGame()" disabled>Rozpocznij</button>
-        </div>
-        <div id="controls-client" style="display:none;">
-            <button id="btn-ready" class="btn-secondary" onclick="toggleReady()">Gotowy</button>
-        </div>
-    </div>
-
-    <div id="screen-hinting" class="screen">
-        <div id="view-guesser-wait" style="display:none;">
-            <h2>Jesteś Zgadującym!</h2>
-            <p>Inni gracze ustalają podpowiedzi...</p>
-            <div style="font-size: 4em;">🤫</div>
-        </div>
-
-        <div id="view-hinter-active" style="display:none;">
-            <h2>Twoja liczba to: <span id="secret-target-text" style="color:#f1c40f">?</span></h2>
-            <div class="spectrum-wrapper">
-                <div id="hinter-marker" class="marker"><span class="marker-label" id="marker-val">?</span></div>
+    <div class="sidebar">
+        <h3>🏆 Wyniki</h3>
+        <div id="score-table">
             </div>
-            <div class="category-box clearfix">
-                <div class="cat-left" id="cat-left">...</div>
-                <div class="cat-right" id="cat-right">...</div>
-            </div>
-            <input type="text" id="hint-input" placeholder="Wpisz jedno słowo...">
-            <button class="btn-primary" onclick="submitHint()">Wyślij</button>
-        </div>
-        
-        <div id="view-hinter-done" style="display:none;">
-            <h3>Wysłano!</h3>
-            <p>Czekamy na innych...</p>
+        <div style="margin-top: auto; font-size: 0.8em; opacity: 0.7;">
+            Runda: <span id="ui-current-round">0</span>/<span id="ui-total-rounds">0</span>
         </div>
     </div>
 
-    <div id="screen-guessing" class="screen">
-        <h2>Zgadywanie</h2>
-        <p>Zgaduje: <b id="current-guesser-name"></b></p>
-        <div class="category-box clearfix">
-            <div class="cat-left" id="guess-cat-left"></div>
-            <div class="cat-right" id="guess-cat-right"></div>
-        </div>
-        <div class="hint-word" id="current-hint-word"></div>
-        <p>Podpowiedź od: <b id="hinter-name"></b></p>
+    <div class="main-content">
+        <div class="container">
+            <h1>SPEKTRUM</h1>
+            <div id="error-msg"></div>
 
-        <div id="guesser-controls" style="display:none;">
-            <button class="btn-action" id="btn-next-hint" onclick="nextHint()">Następna podpowiedź ➡</button>
-            <div id="final-guess-area" style="display:none;">
-                <p>Ostatnia podpowiedź! Wybierz liczbę na pasku:</p>
-                <div class="spectrum-wrapper">
-                    <input type="range" min="1" max="10" value="5" class="guess-slider" id="guess-range" oninput="updateGuessDisplay(this.value)">
-                    <div id="guess-marker-visual" class="marker" style="left: 44.4%; pointer-events: none;">
-                        <span class="marker-label" id="guess-val-display">5</span>
+            <div id="screen-menu" class="screen active">
+                <button class="btn-primary" onclick="showScreen('screen-host-setup')">Stwórz Grę</button>
+                <button class="btn-secondary" onclick="showScreen('screen-join-setup')">Dołącz</button>
+            </div>
+
+            <div id="screen-host-setup" class="screen">
+                <h2>Ustawienia Hostera</h2>
+                <input type="text" id="host-nick" placeholder="Twój Nick">
+                <br>
+                <label>Ilość graczy: </label>
+                <select id="max-players"><option>2</option><option>3</option><option>4</option><option>5</option></select>
+                <br>
+                <label>Ilość rund: </label>
+                <select id="total-rounds"><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select>
+                <br>
+                <button class="btn-primary" onclick="createGame()">Utwórz Lobby</button>
+            </div>
+
+            <div id="screen-join-setup" class="screen">
+                <h2>Dołącz do Gry</h2>
+                <input type="text" id="join-nick" placeholder="Twój Nick">
+                <input type="number" id="join-code" placeholder="4-cyfrowy kod">
+                <br>
+                <button class="btn-primary" onclick="joinGame()">Połącz</button>
+            </div>
+
+            <div id="screen-lobby" class="screen">
+                <h2>Lobby</h2>
+                <div id="display-code" class="room-code">----</div>
+                <div id="lobby-list" style="text-align: left; margin: 20px 0;"></div>
+                <div id="controls-host" style="display:none;">
+                    <button id="btn-start" class="btn-disabled" onclick="serverStartGame()" disabled>Start Gry</button>
+                </div>
+                <div id="controls-client" style="display:none;">
+                    <button id="btn-ready" class="btn-secondary" onclick="toggleReady()">Jestem Gotowy</button>
+                </div>
+            </div>
+
+            <div id="screen-hinting" class="screen">
+                <div id="view-guesser-wait">
+                    <h3>Jesteś Zgadującym!</h3>
+                    <p>Inni przygotowują podpowiedzi dla Ciebie.</p>
+                    <div style="font-size: 3em;">🤫</div>
+                </div>
+                <div id="view-hinter-active" style="display:none;">
+                    <h3>Twoja liczba: <span id="hint-target-val" style="color:#f1c40f">?</span></h3>
+                    <div class="spectrum-wrapper">
+                        <div id="hint-marker" class="marker"><span class="marker-label" id="hint-marker-label">?</span></div>
+                    </div>
+                    <div class="category-box">
+                        <span id="cat-left" style="color:#ff6b6b"></span>
+                        <span id="cat-right" style="color:#3498db"></span>
+                    </div>
+                    <input type="text" id="hint-input" placeholder="Wpisz słowo-klucz...">
+                    <button class="btn-primary" onclick="clientSubmitHint()">Wyślij podpowiedź</button>
+                </div>
+            </div>
+
+            <div id="screen-guessing" class="screen">
+                <h3>Zgaduje: <span id="ui-guesser-name" style="color:#f1c40f"></span></h3>
+                <div class="category-box">
+                    <span id="guess-cat-left" style="color:#ff6b6b"></span>
+                    <span id="guess-cat-right" style="color:#3498db"></span>
+                </div>
+                <div id="ui-hint-word" style="font-size: 2em; font-weight: 900; margin: 20px 0; text-transform: uppercase;"></div>
+                <p>Podpowiada: <span id="ui-hinter-name"></span></p>
+                
+                <div id="guesser-controls" style="display:none;">
+                    <button id="btn-next" class="btn-secondary" onclick="clientRequestNext()">Następna podpowiedź ➡</button>
+                    <div id="final-guess-ui" style="display:none;">
+                        <p>Ostatnia podpowiedź! Wybierz liczbę na pasku:</p>
+                        <div class="spectrum-wrapper">
+                            <input type="range" min="1" max="10" value="5" class="guess-slider" id="guess-range" oninput="updateGuessMarker(this.value)">
+                            <div id="guess-marker-visual" class="marker" style="left: 44.4%; pointer-events: none;">
+                                <span class="marker-label" id="guess-val-display">5</span>
+                            </div>
+                        </div>
+                        <button class="btn-primary" onclick="clientSubmitGuess()">ZGADUJĘ!</button>
                     </div>
                 </div>
-                <button class="btn-primary" onclick="confirmGuess()">ZGADUJĘ!</button>
             </div>
+
+            <div id="screen-result" class="screen">
+                <h2 id="res-title">WYNIK</h2>
+                <div style="display: flex; justify-content: space-around; font-size: 1.2em; margin: 20px 0;">
+                    <div>Cel: <div class="room-code" id="res-target">?</div></div>
+                    <div>Strzał: <div class="room-code" id="res-guess">?</div></div>
+                </div>
+                <div id="res-points" style="font-size: 1.5em; color: #f1c40f; margin-bottom: 20px;">+0 pkt</div>
+                <div id="host-next-turn" style="display:none;">
+                    <button class="btn-primary" onclick="serverNextTurn()">Kontynuuj</button>
+                </div>
+            </div>
+
+            <div id="screen-final" class="screen">
+                <h2>KONIEC GRY</h2>
+                <h1 id="winner-name">---</h1>
+                <div id="final-leaderboard"></div>
+                <div id="host-restart" style="display:none;">
+                    <button class="btn-primary" onclick="location.reload()">Zagraj Ponownie</button>
+                </div>
+            </div>
+
         </div>
-        <p id="spectator-msg" style="display:none; color: #bdc3c7;">Zgadujący myśli...</p>
     </div>
 
-    <div id="screen-result" class="screen">
-        <h2 id="result-title">WYNIK</h2>
-        <div style="display: flex; justify-content: space-around; align-items: center;">
-            <div><p>Cel</p><div class="room-code" id="result-target">?</div></div>
-            <div style="font-size: 2em;">➔</div>
-            <div><p>Strzał</p><div class="room-code" id="result-guess">?</div></div>
-        </div>
-        <div id="result-msg" style="font-size: 1.5em; margin: 20px;"></div>
-        <div id="host-restart" style="display:none;"><button class="btn-primary" onclick="restartGame()">Zagraj Ponownie</button></div>
+    <div class="sidebar sidebar-right">
+        <h3>💬 Status</h3>
+        <div id="status-list">
+            </div>
     </div>
-</div>
 
 <script>
-    const CATEGORIES = [
-        ["Tanie", "Drogie"], ["Zdrowe", "Niezdrowe"], ["Najgorszy", "Najlepszy"], ["Nudne", "Ekscytujące"],
-        ["Ciche", "Głośne"], ["Zimne", "Gorące"], ["Brzydkie", "Piękne"], ["Bezpieczne", "Niebezpieczne"],
-        ["Słabe", "Silne"], ["Miękkie", "Twarde"], ["Małe", "Wielkie"], ["Wolne", "Szybkie"]
-    ];
+    const CATS = [["Tanie", "Drogie"], ["Zimne", "Gorące"], ["Nudne", "Ciekawe"], ["Złe", "Dobre"], ["Małe", "Wielkie"], ["Lekkie", "Ciężkie"], ["Ciche", "Głośne"], ["Łagodne", "Ostre"]];
+    const PREFIX = "spektrum-v3-";
+    let peer, myConn, hostConns = [], isHost = false, myNick = "";
+    
+    let state = {
+        phase: 'LOBBY', // LOBBY, HINTING, GUESSING, RESULT, FINAL
+        players: [], // {id, nick, score, ready, role, hintDone, cat:[], word:''}
+        totalRounds: 2,
+        currentRound: 1,
+        turnIndex: 0, // Kto teraz zgaduje (indeks w tablicy players)
+        target: 5,
+        guess: 0,
+        hintIdx: 0
+    };
 
-    const PREFIX = "spektrum-v2-"; 
-    let peer = null, myConn = null, hostConns = [], isHost = false, myNick = "", roomCode = "";
-    let gameState = { maxPlayers: 0, players: [], phase: 'LOBBY', targetNumber: 5, guesserId: null, currentHintIndex: 0, finalGuess: null };
+    function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+    function error(m) { document.getElementById('error-msg').innerText = m; setTimeout(()=>document.getElementById('error-msg').innerText="", 3000); }
 
-    function showScreen(id) {
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-    }
-
-    function showError(msg) { document.getElementById('error-msg').innerText = msg; setTimeout(()=>document.getElementById('error-msg').innerText="", 3000); }
-
-    // --- HOST ---
+    // --- LOGIKA POŁĄCZEŃ ---
     function createGame() {
-        const nick = document.getElementById('host-nick').value.trim();
-        if (!nick) return showError("Podaj nick!");
-        myNick = nick; isHost = true;
-        gameState.maxPlayers = parseInt(document.getElementById('max-players').value);
-        roomCode = Math.floor(1000 + Math.random() * 9000).toString();
-        
-        if(peer) peer.destroy();
-        peer = new Peer(PREFIX + roomCode);
-        document.getElementById('display-code').innerText = "Ładowanie...";
-
-        peer.on('open', (id) => {
-            gameState.players = [{ peerId: id, nick: myNick, isReady: false, isHost: true, role: 'HINTER', hintData: null }];
-            document.getElementById('display-code').innerText = roomCode;
-            setupLobbyUI(); showScreen('screen-lobby');
+        myNick = document.getElementById('host-nick').value || "Hoster";
+        state.totalRounds = parseInt(document.getElementById('total-rounds').value);
+        let code = Math.floor(1000 + Math.random()*9000).toString();
+        isHost = true;
+        peer = new Peer(PREFIX + code);
+        peer.on('open', id => {
+            state.players.push({id, nick: myNick, score: 0, ready: true, isHost: true});
+            document.getElementById('display-code').innerText = code;
+            document.getElementById('controls-host').style.display = 'block';
+            showScreen('screen-lobby'); render();
             peer.on('connection', c => {
-                if (gameState.players.length >= gameState.maxPlayers) return c.on('open', ()=> {c.send({type:'ERROR',msg:'Pełno'}); c.close();});
+                c.on('data', d => handleServerData(d, c));
                 hostConns.push(c);
-                c.on('data', d => handleData(d, c.peer));
-                c.on('close', () => { gameState.players = gameState.players.filter(p=>p.peerId!==c.peer); broadcast(); });
             });
         });
-        peer.on('error', e => { if(e.type==='unavailable-id') createGame(); else showError("Błąd sieci."); });
+        peer.on('error', e => e.type === 'unavailable-id' ? createGame() : error("Błąd sieci."));
     }
 
-    // --- JOIN ---
     function joinGame() {
-        const nick = document.getElementById('join-nick').value.trim();
-        const code = document.getElementById('join-code').value.trim();
-        if (!nick || code.length!==4) return showError("Błędne dane!");
-        myNick = nick; isHost = false;
-        if(peer) peer.destroy();
+        myNick = document.getElementById('join-nick').value || "Gracz";
+        let code = document.getElementById('join-code').value;
         peer = new Peer();
         peer.on('open', () => {
             myConn = peer.connect(PREFIX + code);
             myConn.on('open', () => {
-                showScreen('screen-lobby'); document.getElementById('display-code').innerText = code;
-                setupLobbyUI(); myConn.send({type:'JOIN', nick: myNick});
+                myConn.send({type: 'JOIN', nick: myNick});
+                document.getElementById('display-code').innerText = code;
+                document.getElementById('controls-client').style.display = 'block';
+                showScreen('screen-lobby');
             });
-            myConn.on('data', d => { if(d.type==='STATE') { gameState=d.state; render(); } else if(d.type==='ERROR') showError(d.msg); });
-            setTimeout(() => { if(!myConn.open) showError("Nie znaleziono pokoju."); }, 4000);
+            myConn.on('data', d => { state = d; render(); });
         });
     }
 
-    function handleData(d, peerId) {
-        let p = gameState.players.find(x=>x.peerId===peerId);
-        if (d.type==='JOIN') { gameState.players.push({peerId, nick:d.nick, isReady:false, isHost:false, role:'HINTER', hintData:null}); }
-        else if (d.type==='READY') { if(p) p.isReady = d.val; }
-        else if (d.type==='HINT') { if(p && p.hintData) { p.hintData.word=d.word; p.hintData.done=true; checkHints(); } }
-        else if (d.type==='NEXT') { if(peerId===gameState.guesserId) gameState.currentHintIndex++; }
-        else if (d.type==='GUESS') { if(peerId===gameState.guesserId) { gameState.finalGuess=d.val; gameState.phase='RESULT'; } }
+    // --- SERWER (HOST) ---
+    function handleServerData(d, conn) {
+        let p = state.players.find(x => x.id === conn.peer);
+        if(d.type === 'JOIN') state.players.push({id: conn.peer, nick: d.nick, score: 0, ready: false, isHost: false});
+        if(d.type === 'READY') if(p) p.ready = d.val;
+        if(d.type === 'HINT') if(p) { p.word = d.word; p.hintDone = true; checkAllHints(); }
+        if(d.type === 'NEXT') state.hintIdx++;
+        if(d.type === 'GUESS') { state.guess = d.val; calcScore(); }
         broadcast();
     }
 
-    function checkHints() {
-        const hinters = gameState.players.filter(x=>x.role==='HINTER');
-        if (hinters.every(x=>x.hintData && x.hintData.done)) { gameState.phase='GUESSING'; gameState.currentHintIndex=0; }
+    function broadcast() { 
+        render(); 
+        hostConns.forEach(c => c.open && c.send(state)); 
     }
 
-    function broadcast() { render(); hostConns.forEach(c => c.open && c.send({type:'STATE', state:gameState})); }
+    function serverStartGame() {
+        state.currentRound = 1;
+        state.turnIndex = 0;
+        newTurn();
+    }
 
-    function startGame() {
-        gameState.targetNumber = Math.floor(Math.random()*10)+1;
-        const idx = Math.floor(Math.random()*gameState.players.length);
-        gameState.players.forEach((p,i) => {
-            if(i===idx) { p.role='GUESSER'; gameState.guesserId=p.peerId; }
-            else { 
-                p.role='HINTER'; 
-                const cat = CATEGORIES[Math.floor(Math.random()*CATEGORIES.length)];
-                p.hintData = { catLeft:cat[0], catRight:cat[1], word:'', done:false };
+    function newTurn() {
+        state.phase = 'HINTING';
+        state.target = Math.floor(Math.random()*10) + 1;
+        state.hintIdx = 0;
+        state.players.forEach((p, i) => {
+            p.hintDone = false;
+            if(i === state.turnIndex) p.role = 'GUESSER';
+            else {
+                p.role = 'HINTER';
+                p.cat = CATS[Math.floor(Math.random()*CATS.length)];
             }
         });
-        gameState.phase = 'HINTING'; broadcast();
+        broadcast();
     }
 
+    function checkAllHints() {
+        if(state.players.filter(p => p.role === 'HINTER' && !p.hintDone).length === 0) {
+            state.phase = 'GUESSING';
+        }
+    }
+
+    function calcScore() {
+        let guesser = state.players[state.turnIndex];
+        let pts = 0;
+        let diff = Math.abs(state.target - state.guess);
+        if(diff === 0) pts = 3;
+        else if(diff === 1) pts = 1;
+        guesser.score += pts;
+        state.lastPoints = pts;
+        state.phase = 'RESULT';
+    }
+
+    function serverNextTurn() {
+        state.turnIndex++;
+        if(state.turnIndex >= state.players.length) {
+            state.turnIndex = 0;
+            state.currentRound++;
+        }
+        if(state.currentRound > state.totalRounds) {
+            state.phase = 'FINAL';
+        } else {
+            newTurn();
+        }
+        broadcast();
+    }
+
+    // --- KLIENT ---
+    function toggleReady() {
+        let me = state.players.find(p => p.id === peer.id);
+        if(me) myConn.send({type: 'READY', val: !me.ready});
+    }
+
+    function clientSubmitHint() {
+        let w = document.getElementById('hint-input').value.trim();
+        if(!w) return;
+        if(isHost) handleServerData({type:'HINT', word: w}, {peer: peer.id});
+        else myConn.send({type: 'HINT', word: w});
+        document.getElementById('hint-input').value = "";
+    }
+
+    function clientRequestNext() {
+        if(isHost) handleServerData({type: 'NEXT'}, {peer: peer.id});
+        else myConn.send({type: 'NEXT'});
+    }
+
+    function clientSubmitGuess() {
+        let v = parseInt(document.getElementById('guess-range').value);
+        if(isHost) handleServerData({type: 'GUESS', val: v}, {peer: peer.id});
+        else myConn.send({type: 'GUESS', val: v});
+    }
+
+    // --- RENDEROWANIE ---
     function render() {
-        if (gameState.phase==='LOBBY') {
+        // Lewy sidebar (Tabela wyników)
+        const scoreTable = document.getElementById('score-table');
+        scoreTable.innerHTML = state.players.sort((a,b)=>b.score-a.score).map(p => 
+            `<div class="score-row"><b>${p.nick}</b> <span>${p.score} pkt</span></div>`).join('');
+        document.getElementById('ui-current-round').innerText = state.currentRound;
+        document.getElementById('ui-total-rounds').innerText = state.totalRounds;
+
+        // Prawy sidebar (Status podpowiedzi)
+        const statusList = document.getElementById('status-list');
+        if(state.phase === 'HINTING') {
+            statusList.innerHTML = state.players.filter(p=>p.role==='HINTER').map(p => 
+                `<div class="status-item ${p.hintDone?'status-done':'status-pending'}">${p.nick}: ${p.hintDone?'GOTOWY':'MYŚLI...'}</div>`).join('');
+        } else {
+            statusList.innerHTML = "<p style='font-size:0.8em; opacity:0.5'>Czekanie na fazę podpowiedzi...</p>";
+        }
+
+        // Ekrany główne
+        if(state.phase === 'LOBBY') {
             showScreen('screen-lobby');
-            const list = document.getElementById('players-list'); list.innerHTML = "";
-            gameState.players.forEach(p => {
-                const li = document.createElement('li'); li.className="player-item";
-                li.innerHTML = `<span>${p.nick}</span><span class="${p.isReady||p.isHost?'status-ready':'status-wait'}">${p.isHost?'HOST':(p.isReady?'OK':'...')}</span>`;
-                list.appendChild(li);
-            });
-            document.getElementById('player-count').innerText = `${gameState.players.length}/${gameState.maxPlayers}`;
+            document.getElementById('lobby-list').innerHTML = state.players.map(p => 
+                `<div>${p.nick} - ${p.ready?'✅':'⏳'}</div>`).join('');
             if(isHost) {
-                const canStart = gameState.players.length >= 2 && gameState.players.every(x=>x.isHost || x.isReady);
-                document.getElementById('btn-start').disabled = !canStart;
-                document.getElementById('btn-start').className = canStart ? 'btn-primary' : 'btn-disabled';
+                const ready = state.players.length >= 2 && state.players.every(p=>p.ready);
+                document.getElementById('btn-start').disabled = !ready;
+                document.getElementById('btn-start').className = ready ? 'btn-primary' : 'btn-disabled';
             }
-        } else if (gameState.phase==='HINTING') {
+        } 
+        else if(state.phase === 'HINTING') {
             showScreen('screen-hinting');
-            const me = gameState.players.find(x=>x.peerId===peer.id);
-            if(me.role==='GUESSER') {
-                document.getElementById('view-guesser-wait').style.display='block';
-                document.getElementById('view-hinter-active').style.display='none';
-                document.getElementById('view-hinter-done').style.display='none';
+            let me = state.players.find(p => p.id === peer.id);
+            if(me.role === 'GUESSER') {
+                document.getElementById('view-guesser-wait').style.display = 'block';
+                document.getElementById('view-hinter-active').style.display = 'none';
             } else {
-                document.getElementById('view-guesser-wait').style.display='none';
-                if(me.hintData.done) {
-                    document.getElementById('view-hinter-active').style.display='none';
-                    document.getElementById('view-hinter-done').style.display='block';
-                } else {
-                    document.getElementById('view-hinter-active').style.display='block';
-                    document.getElementById('view-hinter-done').style.display='none';
-                    document.getElementById('secret-target-text').innerText = gameState.targetNumber;
-                    document.getElementById('marker-val').innerText = gameState.targetNumber;
-                    document.getElementById('hinter-marker').style.left = ((gameState.targetNumber - 1) * 11.11) + "%";
-                    document.getElementById('cat-left').innerText = me.hintData.catLeft;
-                    document.getElementById('cat-right').innerText = me.hintData.catRight;
+                document.getElementById('view-guesser-wait').style.display = 'none';
+                document.getElementById('view-hinter-active').style.display = me.hintDone ? 'none' : 'block';
+                if(!me.hintDone) {
+                    document.getElementById('hint-target-val').innerText = state.target;
+                    document.getElementById('hint-marker-label').innerText = state.target;
+                    document.getElementById('hint-marker').style.left = (state.target-1)*11.11 + "%";
+                    document.getElementById('cat-left').innerText = me.cat[0];
+                    document.getElementById('cat-right').innerText = me.cat[1];
                 }
             }
-        } else if (gameState.phase==='GUESSING') {
+        }
+        else if(state.phase === 'GUESSING') {
             showScreen('screen-guessing');
-            const hinters = gameState.players.filter(x=>x.role==='HINTER');
-            const h = hinters[gameState.currentHintIndex];
-            const me = gameState.players.find(x=>x.peerId===peer.id);
-            document.getElementById('current-guesser-name').innerText = gameState.players.find(x=>x.role==='GUESSER').nick;
-            document.getElementById('guess-cat-left').innerText = h.hintData.catLeft;
-            document.getElementById('guess-cat-right').innerText = h.hintData.catRight;
-            document.getElementById('current-hint-word').innerText = h.hintData.word;
-            document.getElementById('hinter-name').innerText = h.nick;
+            let guesser = state.players[state.turnIndex];
+            let hinters = state.players.filter(p => p.role === 'HINTER');
+            let h = hinters[state.hintIdx];
             
-            const isG = me.role==='GUESSER';
-            document.getElementById('guesser-controls').style.display = isG ? 'block' : 'none';
-            document.getElementById('spectator-msg').style.display = isG ? 'none' : 'block';
+            document.getElementById('ui-guesser-name').innerText = guesser.nick;
+            document.getElementById('ui-hinter-name').innerText = h.nick;
+            document.getElementById('ui-hint-word').innerText = h.word;
+            document.getElementById('guess-cat-left').innerText = h.cat[0];
+            document.getElementById('guess-cat-right').innerText = h.cat[1];
+
+            let isMeGuesser = peer.id === guesser.id;
+            document.getElementById('guesser-controls').style.display = isMeGuesser ? 'block' : 'none';
             
-            const isLast = gameState.currentHintIndex === hinters.length - 1;
-            document.getElementById('btn-next-hint').style.display = (isG && !isLast) ? 'inline-block' : 'none';
-            document.getElementById('final-guess-area').style.display = (isG && isLast) ? 'block' : 'none';
-        } else if (gameState.phase==='RESULT') {
+            let isLastHint = state.hintIdx === hinters.length - 1;
+            document.getElementById('btn-next').style.display = isLastHint ? 'none' : 'inline-block';
+            document.getElementById('final-guess-ui').style.display = isLastHint ? 'block' : 'none';
+        }
+        else if(state.phase === 'RESULT') {
             showScreen('screen-result');
-            document.getElementById('result-target').innerText = gameState.targetNumber;
-            document.getElementById('result-guess').innerText = gameState.finalGuess;
-            const diff = Math.abs(gameState.targetNumber - gameState.finalGuess);
-            const win = diff === 0;
-            document.getElementById('result-title').innerText = win ? "IDEALNIE!" : "BLISKO!";
-            document.getElementById('result-title').style.color = win ? "#27ae60" : "#e67e22";
-            document.getElementById('result-msg').innerText = win ? "Zdobyliście 3 punkty!" : (diff <= 1 ? "Zdobyliście 1 punkt!" : "0 punktów.");
+            document.getElementById('res-target').innerText = state.target;
+            document.getElementById('res-guess').innerText = state.guess;
+            document.getElementById('res-points').innerText = `+${state.lastPoints} pkt dla zgadującego!`;
+            document.getElementById('host-next-turn').style.display = isHost ? 'block' : 'none';
+        }
+        else if(state.phase === 'FINAL') {
+            showScreen('screen-final');
+            let winner = state.players.sort((a,b)=>b.score-a.score)[0];
+            document.getElementById('winner-name').innerText = `Zwycięzca: ${winner.nick}`;
             document.getElementById('host-restart').style.display = isHost ? 'block' : 'none';
         }
     }
 
-    function setupLobbyUI() {
-        document.getElementById('controls-host').style.display = isHost ? 'block' : 'none';
-        document.getElementById('controls-client').style.display = isHost ? 'none' : 'block';
-    }
-
-    function toggleReady() {
-        const me = gameState.players.find(x=>x.peerId===peer.id);
-        const val = !me.isReady;
-        myConn.send({type:'READY', val});
-    }
-
-    function submitHint() {
-        const word = document.getElementById('hint-input').value.trim();
-        if(!word) return;
-        if(isHost) { 
-            const me = gameState.players.find(x=>x.peerId===peer.id);
-            me.hintData.word=word; me.hintData.done=true; checkHints(); broadcast();
-        } else myConn.send({type:'HINT', word});
-    }
-
-    function nextHint() { if(isHost) { gameState.currentHintIndex++; broadcast(); } else myConn.send({type:'NEXT'}); }
-
-    function updateGuessDisplay(v) {
+    function updateGuessMarker(v) {
         document.getElementById('guess-val-display').innerText = v;
-        document.getElementById('guess-marker-visual').style.left = ((v-1)*11.11) + "%";
+        document.getElementById('guess-marker-visual').style.left = (v-1)*11.11 + "%";
     }
 
-    function confirmGuess() {
-        const val = parseInt(document.getElementById('guess-range').value);
-        if(isHost) { gameState.finalGuess=val; gameState.phase='RESULT'; broadcast(); }
-        else myConn.send({type:'GUESS', val});
-    }
-
-    function restartGame() { if(isHost) { gameState.phase='LOBBY'; gameState.players.forEach(p=>p.isReady=false); broadcast(); } }
 </script>
 </body>
 </html>

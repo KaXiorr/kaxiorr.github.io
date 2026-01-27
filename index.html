@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Spektrum - Gra Multiplayer</title>
+    <title>Spektrum</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #2c3e50; color: white; text-align: center; margin: 0; padding: 20px; }
@@ -14,7 +14,7 @@
         .screen { display: none; }
         .active { display: block; }
         
-        input, select { padding: 12px; border-radius: 5px; border: none; width: 80%; margin: 10px 0; font-size: 16px; text-align: center;}
+        input[type="text"], input[type="number"], select { padding: 12px; border-radius: 5px; border: none; width: 80%; margin: 10px 0; font-size: 16px; text-align: center;}
         button { padding: 12px 25px; margin: 10px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; transition: 0.2s; font-weight: bold; }
         
         .btn-primary { background: #27ae60; color: white; }
@@ -30,19 +30,75 @@
         .status-wait { color: #e74c3c; font-weight: bold; }
         
         .room-code { font-size: 2em; letter-spacing: 5px; background: #2c3e50; padding: 10px; border: 2px dashed #f1c40f; display: inline-block; margin: 10px 0; color: #f1c40f; }
-        #error-msg { color: #e74c3c; margin-top: 10px; min-height: 20px; }
+        #error-msg { color: #ff6b6b; margin-top: 10px; font-weight: bold; min-height: 20px; }
 
-        /* Style gry */
-        .secret-number { font-size: 3em; color: #f1c40f; font-weight: bold; margin: 10px 0; }
+        /* SPECTRUM STYLES */
+        .spectrum-wrapper {
+            position: relative;
+            width: 100%;
+            height: 40px;
+            background: linear-gradient(to right, #e74c3c 0%, #f1c40f 50%, #3498db 100%);
+            border-radius: 20px;
+            margin: 40px 0 20px 0;
+            border: 3px solid #2c3e50;
+        }
+
+        .marker {
+            position: absolute;
+            width: 6px;
+            height: 50px;
+            background: white;
+            top: -5px;
+            border: 2px solid #333;
+            border-radius: 5px;
+            transform: translateX(-50%);
+            transition: left 0.3s ease;
+        }
+
+        .marker-label {
+            position: absolute;
+            top: -35px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-weight: bold;
+            color: #f1c40f;
+            font-size: 1.2em;
+            text-shadow: 1px 1px 2px black;
+        }
+
         .category-box { background: #2c3e50; padding: 15px; margin: 15px 0; border-radius: 8px; border: 1px solid #7f8c8d; }
-        .cat-left { color: #e74c3c; font-weight: bold; float: left; width: 45%; text-align: left;}
-        .cat-right { color: #3498db; font-weight: bold; float: right; width: 45%; text-align: right;}
+        .cat-left { color: #ff6b6b; font-weight: bold; float: left; width: 45%; text-align: left;}
+        .cat-right { color: #54a0ff; font-weight: bold; float: right; width: 45%; text-align: right;}
         .clearfix::after { content: ""; clear: both; display: table; }
         
-        .hint-word { font-size: 1.5em; color: #f1c40f; margin: 20px 0; text-transform: uppercase; }
-        .guess-btn { width: 40px; height: 40px; margin: 5px; cursor: pointer; background: #ecf0f1; border: none; font-weight: bold; color: #333; }
-        .guess-btn:hover { background: #f1c40f; }
-        .guess-btn.selected { background: #f1c40f; transform: scale(1.2); }
+        .hint-word { font-size: 1.8em; color: #f1c40f; margin: 20px 0; text-transform: uppercase; font-weight: 900; }
+
+        /* SLIDER */
+        .guess-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 40px;
+            background: transparent;
+            outline: none;
+            cursor: pointer;
+            position: absolute;
+            top: 0;
+            left: 0;
+            margin: 0;
+            z-index: 10;
+        }
+
+        .guess-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 30px;
+            height: 30px;
+            background: #fff;
+            border: 3px solid #2c3e50;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 5px rgba(0,0,0,0.5);
+        }
     </style>
 </head>
 <body>
@@ -57,25 +113,22 @@
     </div>
 
     <div id="screen-host-setup" class="screen">
-        <h2>Ustawienia Gry</h2>
+        <h2>Ustawienia</h2>
         <input type="text" id="host-nick" placeholder="Twój Nick" maxlength="12">
         <br>
-        <label>Liczba graczy (2-5):</label>
+        <label>Gracze (2-5):</label>
         <select id="max-players">
-            <option value="2">2</option>
-            <option value="3">3</option>
-            <option value="4">4</option>
-            <option value="5">5</option>
-        </select>
-        <br>
+            <option value="2">2</option><option value="3">3</option>
+            <option value="4">4</option><option value="5">5</option>
+        </select><br>
         <button class="btn-secondary" onclick="showScreen('screen-menu')">Wróć</button>
-        <button class="btn-primary" onclick="createGame()">Utwórz Lobby</button>
+        <button class="btn-primary" onclick="createGame()">Utwórz</button>
     </div>
 
     <div id="screen-join-setup" class="screen">
-        <h2>Dołącz do Gry</h2>
+        <h2>Dołącz</h2>
         <input type="text" id="join-nick" placeholder="Twój Nick" maxlength="12">
-        <input type="number" id="join-code" placeholder="4-cyfrowy kod" max="9999">
+        <input type="number" id="join-code" placeholder="4-cyfrowy kod">
         <br>
         <button class="btn-secondary" onclick="showScreen('screen-menu')">Wróć</button>
         <button class="btn-primary" onclick="joinGame()">Dołącz</button>
@@ -83,590 +136,277 @@
 
     <div id="screen-lobby" class="screen">
         <h2>Lobby</h2>
-        <p>Kod pokoju:</p>
         <div id="display-code" class="room-code">----</div>
         <p>Gracze: <span id="player-count">0/0</span></p>
-        
         <ul id="players-list" class="player-list"></ul>
-
         <div id="controls-host" style="display:none;">
-            <p style="font-size: 0.9em; color: #bdc3c7;">Jesteś Hostem. Czekaj na wszystkich.</p>
-            <button id="btn-start" class="btn-disabled" onclick="startGame()" disabled>Rozpocznij Grę</button>
+            <button id="btn-start" class="btn-disabled" onclick="startGame()" disabled>Rozpocznij</button>
         </div>
-
         <div id="controls-client" style="display:none;">
-            <button id="btn-ready" class="btn-secondary" onclick="toggleReady()">Jestem Gotowy</button>
+            <button id="btn-ready" class="btn-secondary" onclick="toggleReady()">Gotowy</button>
         </div>
     </div>
 
     <div id="screen-hinting" class="screen">
         <div id="view-guesser-wait" style="display:none;">
             <h2>Jesteś Zgadującym!</h2>
-            <p>Zrelaksuj się. Inni gracze właśnie wymyślają podpowiedzi do tajnej liczby.</p>
-            <div style="font-size: 3em;">🤫</div>
+            <p>Inni gracze ustalają podpowiedzi...</p>
+            <div style="font-size: 4em;">🤫</div>
         </div>
 
         <div id="view-hinter-active" style="display:none;">
-            <h2>Twoje Zadanie</h2>
-            <p>Tajna liczba to:</p>
-            <div class="secret-number" id="secret-target">?</div>
-            
-            <p>Twoja kategoria:</p>
+            <h2>Twoja liczba to: <span id="secret-target-text" style="color:#f1c40f">?</span></h2>
+            <div class="spectrum-wrapper">
+                <div id="hinter-marker" class="marker"><span class="marker-label" id="marker-val">?</span></div>
+            </div>
             <div class="category-box clearfix">
                 <div class="cat-left" id="cat-left">...</div>
                 <div class="cat-right" id="cat-right">...</div>
             </div>
-
-            <input type="text" id="hint-input" placeholder="Wpisz jedno słowo/skojarzenie...">
-            <button class="btn-primary" onclick="submitHint()">Zatwierdź Podpowiedź</button>
-            <p style="font-size: 0.8em; color:#bdc3c7;">Ocena 1 to lewa strona, 10 to prawa strona.</p>
+            <input type="text" id="hint-input" placeholder="Wpisz jedno słowo...">
+            <button class="btn-primary" onclick="submitHint()">Wyślij</button>
         </div>
         
         <div id="view-hinter-done" style="display:none;">
-            <h3>Podpowiedź wysłana!</h3>
-            <p>Czekamy na resztę podpowiadaczy...</p>
+            <h3>Wysłano!</h3>
+            <p>Czekamy na innych...</p>
         </div>
     </div>
 
     <div id="screen-guessing" class="screen">
         <h2>Zgadywanie</h2>
-        <p>Zgadujący: <span id="current-guesser-name" style="color:#f1c40f; font-weight:bold;"></span></p>
-        
+        <p>Zgaduje: <b id="current-guesser-name"></b></p>
         <div class="category-box clearfix">
-            <div class="cat-left" id="guess-cat-left">Tanie</div>
-            <div class="cat-right" id="guess-cat-right">Drogie</div>
+            <div class="cat-left" id="guess-cat-left"></div>
+            <div class="cat-right" id="guess-cat-right"></div>
         </div>
-
-        <p>Podpowiedź gracza <span id="hinter-name">...</span>:</p>
-        <div class="hint-word" id="current-hint-word">...</div>
+        <div class="hint-word" id="current-hint-word"></div>
+        <p>Podpowiedź od: <b id="hinter-name"></b></p>
 
         <div id="guesser-controls" style="display:none;">
             <button class="btn-action" id="btn-next-hint" onclick="nextHint()">Następna podpowiedź ➡</button>
-            
-            <div id="final-guess-area" style="display:none; margin-top: 20px; border-top: 1px solid #7f8c8d; padding-top: 10px;">
-                <p>Wszystkie podpowiedzi odkryte. Jaka to liczba?</p>
-                <div id="guess-buttons">
+            <div id="final-guess-area" style="display:none;">
+                <p>Ostatnia podpowiedź! Wybierz liczbę na pasku:</p>
+                <div class="spectrum-wrapper">
+                    <input type="range" min="1" max="10" value="5" class="guess-slider" id="guess-range" oninput="updateGuessDisplay(this.value)">
+                    <div id="guess-marker-visual" class="marker" style="left: 44.4%; pointer-events: none;">
+                        <span class="marker-label" id="guess-val-display">5</span>
                     </div>
+                </div>
                 <button class="btn-primary" onclick="confirmGuess()">ZGADUJĘ!</button>
             </div>
         </div>
-        
-        <p id="spectator-msg" style="display:none; color: #bdc3c7;">Zgadujący analizuje podpowiedzi...</p>
+        <p id="spectator-msg" style="display:none; color: #bdc3c7;">Zgadujący myśli...</p>
     </div>
 
     <div id="screen-result" class="screen">
-        <h2 id="result-title">KONIEC RUNDY</h2>
-        
-        <p>Szukana liczba: <span class="secret-number" id="result-target">5</span></p>
-        <p>Strzał zgadującego: <span class="secret-number" id="result-guess" style="color:white;">5</span></p>
-        
-        <div id="result-msg" style="font-size: 1.5em; margin: 20px; font-weight: bold;"></div>
-        
-        <div id="host-restart" style="display:none;">
-            <button class="btn-primary" onclick="restartGame()">Zagraj Ponownie</button>
+        <h2 id="result-title">WYNIK</h2>
+        <div style="display: flex; justify-content: space-around; align-items: center;">
+            <div><p>Cel</p><div class="room-code" id="result-target">?</div></div>
+            <div style="font-size: 2em;">➔</div>
+            <div><p>Strzał</p><div class="room-code" id="result-guess">?</div></div>
         </div>
-        <p id="client-restart-msg" style="display:none;">Czekaj na Hosta...</p>
+        <div id="result-msg" style="font-size: 1.5em; margin: 20px;"></div>
+        <div id="host-restart" style="display:none;"><button class="btn-primary" onclick="restartGame()">Zagraj Ponownie</button></div>
     </div>
-
 </div>
 
 <script>
-    // --- BAZA KATEGORII ---
     const CATEGORIES = [
-        ["Tanie", "Drogie"],
-        ["Zdrowe jedzenie", "Niezdrowe jedzenie"],
-        ["Najgorszy aktor", "Najlepszy aktor"],
-        ["Bezużyteczne", "Niezbędne do życia"],
-        ["Ciche", "Głośne"],
-        ["Legalne", "Nielegalne"],
-        ["Film dla dzieci", "Film dla dorosłych"],
-        ["Lekkie", "Ciężkie"],
-        ["Nudne hobby", "Ekscytujące hobby"],
-        ["Zimne", "Gorące"],
-        ["Łagodne", "Pikantne"],
-        ["Słabe zwierze", "Silne zwierze"],
-        ["Miękkie", "Twarde"],
-        ["Brzydkie", "Piękne"],
-        ["Pachnie", "Śmierdzi"],
-        ["Bezpieczne", "Niebezpieczne"],
-        ["Mądre", "Głupie"],
-        ["Staromodne", "Nowoczesne"]
+        ["Tanie", "Drogie"], ["Zdrowe", "Niezdrowe"], ["Najgorszy", "Najlepszy"], ["Nudne", "Ekscytujące"],
+        ["Ciche", "Głośne"], ["Zimne", "Gorące"], ["Brzydkie", "Piękne"], ["Bezpieczne", "Niebezpieczne"],
+        ["Słabe", "Silne"], ["Miękkie", "Twarde"], ["Małe", "Wielkie"], ["Wolne", "Szybkie"]
     ];
 
-    // --- ZMIENNE GLOBALNE ---
-    const PREFIX = "spektrum-game-"; 
-    let peer = null;
-    let myConn = null; 
-    let hostConns = []; 
-    
-    let isHost = false;
-    let myNick = "";
-    let roomCode = "";
+    const PREFIX = "spektrum-v2-"; 
+    let peer = null, myConn = null, hostConns = [], isHost = false, myNick = "", roomCode = "";
+    let gameState = { maxPlayers: 0, players: [], phase: 'LOBBY', targetNumber: 5, guesserId: null, currentHintIndex: 0, finalGuess: null };
 
-    // Główny stan gry
-    let gameState = {
-        maxPlayers: 0,
-        players: [], // {peerId, nick, isReady, isHost, role ('GUESSER'|'HINTER'), hintData: {word, catLeft, catRight, submitted}}
-        phase: 'LOBBY', // LOBBY, HINTING, GUESSING, RESULT
-        targetNumber: 5,
-        guesserId: null,
-        currentHintIndex: 0, // Którą podpowiedź oglądamy w fazie GUESSING
-        finalGuess: null,
-        winner: false
-    };
-
-    // --- NAWIGACJA ---
     function showScreen(id) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(id).classList.add('active');
-        document.getElementById('error-msg').innerText = "";
     }
 
-    function showError(msg) {
-        document.getElementById('error-msg').innerText = msg;
-    }
+    function showError(msg) { document.getElementById('error-msg').innerText = msg; setTimeout(()=>document.getElementById('error-msg').innerText="", 3000); }
 
+    // --- HOST ---
     function createGame() {
-    const nick = document.getElementById('host-nick').value.trim();
-    const max = parseInt(document.getElementById('max-players').value);
-    if (!nick) return showError("Podaj nick!");
-    
-    myNick = nick;
-    isHost = true;
-    gameState.maxPlayers = max;
-    
-    // Spróbujmy wygenerować kod i zainicjować Peer
-    roomCode = Math.floor(1000 + Math.random() * 9000).toString(); 
-    
-    // Jeśli Peer już istniał (np. po błędzie), zniszcz go
-    if (peer) peer.destroy();
-
-    peer = new Peer(PREFIX + roomCode);
-
-    // Wyświetl status ładowania
-    document.getElementById('display-code').innerText = "Ładowanie...";
-
-    peer.on('open', (id) => {
-        console.log("Połączono z serwerem PeerJS. ID pokoju: " + roomCode);
-        gameState.players = [{
-            peerId: id,
-            nick: myNick,
-            isReady: false,
-            isHost: true,
-            role: 'HINTER',
-            hintData: null
-        }];
-        setupLobbyUI();
-        showScreen('screen-lobby');
-        document.getElementById('display-code').innerText = roomCode;
+        const nick = document.getElementById('host-nick').value.trim();
+        if (!nick) return showError("Podaj nick!");
+        myNick = nick; isHost = true;
+        gameState.maxPlayers = parseInt(document.getElementById('max-players').value);
+        roomCode = Math.floor(1000 + Math.random() * 9000).toString();
         
-        peer.on('connection', (conn) => {
-            handleIncomingConnection(conn);
-        });
-    });
+        if(peer) peer.destroy();
+        peer = new Peer(PREFIX + roomCode);
+        document.getElementById('display-code').innerText = "Ładowanie...";
 
-    peer.on('error', (err) => {
-        console.error("Błąd PeerJS:", err.type);
-        if(err.type === 'unavailable-id') {
-            // Jeśli ID zajęte, spróbuj jeszcze raz automatycznie
-            createGame(); 
-        } else {
-            showError("Błąd połączenia: " + err.type);
-            document.getElementById('display-code').innerText = "BŁĄD";
-        }
-    });
-}
-    function handleIncomingConnection(conn) {
-        if (gameState.players.length >= gameState.maxPlayers || gameState.phase !== 'LOBBY') {
-            conn.on('open', () => {
-                conn.send({type: 'ERROR', msg: 'Pokój pełny lub gra trwa'});
-                setTimeout(() => conn.close(), 500);
+        peer.on('open', (id) => {
+            gameState.players = [{ peerId: id, nick: myNick, isReady: false, isHost: true, role: 'HINTER', hintData: null }];
+            document.getElementById('display-code').innerText = roomCode;
+            setupLobbyUI(); showScreen('screen-lobby');
+            peer.on('connection', c => {
+                if (gameState.players.length >= gameState.maxPlayers) return c.on('open', ()=> {c.send({type:'ERROR',msg:'Pełno'}); c.close();});
+                hostConns.push(c);
+                c.on('data', d => handleData(d, c.peer));
+                c.on('close', () => { gameState.players = gameState.players.filter(p=>p.peerId!==c.peer); broadcast(); });
             });
-            return;
-        }
-        hostConns.push(conn);
-        conn.on('data', (data) => handleDataPacket(data, conn.peer));
-        conn.on('close', () => {
-            gameState.players = gameState.players.filter(p => p.peerId !== conn.peer);
-            broadcastState();
         });
+        peer.on('error', e => { if(e.type==='unavailable-id') createGame(); else showError("Błąd sieci."); });
     }
 
-    // --- KLIENT LOGIKA ---
+    // --- JOIN ---
     function joinGame() {
         const nick = document.getElementById('join-nick').value.trim();
         const code = document.getElementById('join-code').value.trim();
-        if (!nick || code.length !== 4) return showError("Podaj nick i poprawny kod!");
-
-        myNick = nick;
-        isHost = false;
+        if (!nick || code.length!==4) return showError("Błędne dane!");
+        myNick = nick; isHost = false;
+        if(peer) peer.destroy();
         peer = new Peer();
-
         peer.on('open', () => {
-            const hostId = PREFIX + code;
-            myConn = peer.connect(hostId);
-
+            myConn = peer.connect(PREFIX + code);
             myConn.on('open', () => {
-                setupLobbyUI(); // KLUCZOWE - POKAZANIE UI
-                showScreen('screen-lobby');
-                document.getElementById('display-code').innerText = code;
-                myConn.send({ type: 'JOIN', nick: myNick });
+                showScreen('screen-lobby'); document.getElementById('display-code').innerText = code;
+                setupLobbyUI(); myConn.send({type:'JOIN', nick: myNick});
             });
-
-            myConn.on('data', (data) => handleClientData(data));
-            myConn.on('error', () => showError("Błąd połączenia."));
-            setTimeout(() => { if(!myConn || !myConn.open) showError("Nie udało się połączyć."); }, 3000);
+            myConn.on('data', d => { if(d.type==='STATE') { gameState=d.state; render(); } else if(d.type==='ERROR') showError(d.msg); });
+            setTimeout(() => { if(!myConn.open) showError("Nie znaleziono pokoju."); }, 4000);
         });
     }
 
-    // --- LOGIKA STANU (HOST) ---
-    function handleDataPacket(data, senderPeerId) {
-        if (data.type === 'JOIN') {
-            gameState.players.push({ peerId: senderPeerId, nick: data.nick, isReady: false, isHost: false, role: 'HINTER', hintData: null });
-            broadcastState();
-        } 
-        else if (data.type === 'READY_TOGGLE') {
-            const player = gameState.players.find(p => p.peerId === senderPeerId);
-            if (player) {
-                player.isReady = data.state;
-                broadcastState();
-            }
-        }
-        else if (data.type === 'SUBMIT_HINT') {
-            const player = gameState.players.find(p => p.peerId === senderPeerId);
-            if (player && player.hintData) {
-                player.hintData.word = data.word;
-                player.hintData.submitted = true;
-                checkAllHintsSubmitted();
-                broadcastState();
-            }
-        }
-        else if (data.type === 'NEXT_HINT') {
-            // Tylko aktualny zgadujący może to wysłać
-            if (senderPeerId === gameState.guesserId) {
-                // Sprawdzamy czy są jeszcze podpowiedzi
-                const hints = gameState.players.filter(p => p.role === 'HINTER' && p.hintData.submitted);
-                if (gameState.currentHintIndex < hints.length - 1) {
-                    gameState.currentHintIndex++;
-                }
-                broadcastState();
-            }
-        }
-        else if (data.type === 'SUBMIT_GUESS') {
-            if (senderPeerId === gameState.guesserId) {
-                gameState.finalGuess = data.number;
-                gameState.phase = 'RESULT';
-                gameState.winner = (gameState.finalGuess === gameState.targetNumber);
-                broadcastState();
-            }
-        }
+    function handleData(d, peerId) {
+        let p = gameState.players.find(x=>x.peerId===peerId);
+        if (d.type==='JOIN') { gameState.players.push({peerId, nick:d.nick, isReady:false, isHost:false, role:'HINTER', hintData:null}); }
+        else if (d.type==='READY') { if(p) p.isReady = d.val; }
+        else if (d.type==='HINT') { if(p && p.hintData) { p.hintData.word=d.word; p.hintData.done=true; checkHints(); } }
+        else if (d.type==='NEXT') { if(peerId===gameState.guesserId) gameState.currentHintIndex++; }
+        else if (d.type==='GUESS') { if(peerId===gameState.guesserId) { gameState.finalGuess=d.val; gameState.phase='RESULT'; } }
+        broadcast();
     }
 
-    function checkAllHintsSubmitted() {
-        const hinters = gameState.players.filter(p => p.role === 'HINTER');
-        const allDone = hinters.every(p => p.hintData && p.hintData.submitted);
-        if (allDone && hinters.length > 0) {
-            gameState.phase = 'GUESSING';
-            gameState.currentHintIndex = 0;
-        }
+    function checkHints() {
+        const hinters = gameState.players.filter(x=>x.role==='HINTER');
+        if (hinters.every(x=>x.hintData && x.hintData.done)) { gameState.phase='GUESSING'; gameState.currentHintIndex=0; }
     }
 
-    // --- START GRY I RESET (HOST) ---
+    function broadcast() { render(); hostConns.forEach(c => c.open && c.send({type:'STATE', state:gameState})); }
+
     function startGame() {
-        if (!isHost) return;
-        
-        // 1. Losuj liczbę 1-10
-        gameState.targetNumber = Math.floor(Math.random() * 10) + 1;
-        
-        // 2. Losuj zgadującego
-        const playerIndices = gameState.players.map((_, i) => i);
-        const guesserIndex = playerIndices[Math.floor(Math.random() * playerIndices.length)];
-        
-        gameState.players.forEach((p, index) => {
-            if (index === guesserIndex) {
-                p.role = 'GUESSER';
-                p.hintData = null;
-                gameState.guesserId = p.peerId;
-            } else {
-                p.role = 'HINTER';
-                // 3. Przydziel kategorie
-                const cat = CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)];
-                p.hintData = {
-                    catLeft: cat[0],
-                    catRight: cat[1],
-                    word: "",
-                    submitted: false
-                };
+        gameState.targetNumber = Math.floor(Math.random()*10)+1;
+        const idx = Math.floor(Math.random()*gameState.players.length);
+        gameState.players.forEach((p,i) => {
+            if(i===idx) { p.role='GUESSER'; gameState.guesserId=p.peerId; }
+            else { 
+                p.role='HINTER'; 
+                const cat = CATEGORIES[Math.floor(Math.random()*CATEGORIES.length)];
+                p.hintData = { catLeft:cat[0], catRight:cat[1], word:'', done:false };
             }
         });
-
-        gameState.phase = 'HINTING';
-        broadcastState();
+        gameState.phase = 'HINTING'; broadcast();
     }
 
-    function restartGame() {
-        // Resetujemy stan, ale zostawiamy graczy
-        gameState.phase = 'LOBBY';
-        gameState.finalGuess = null;
-        gameState.currentHintIndex = 0;
-        gameState.players.forEach(p => {
-            p.isReady = false; // Muszą potwierdzić gotowość ponownie
-            p.hintData = null;
-        });
-        broadcastState();
-    }
-
-    // --- KLIENT ODBIERA DANE ---
-    function handleClientData(data) {
-        if (data.type === 'UPDATE_STATE') {
-            gameState = data.state;
-            renderCurrentScreen();
-        } else if (data.type === 'ERROR') {
-            showError(data.msg);
-        }
-    }
-
-    function broadcastState() {
-        renderCurrentScreen(); 
-        hostConns.forEach(conn => {
-            if(conn.open) conn.send({ type: 'UPDATE_STATE', state: gameState });
-        });
-    }
-
-    // --- RENDEROWANIE EKRANÓW ---
-    function renderCurrentScreen() {
-        if (gameState.phase === 'LOBBY') {
+    function render() {
+        if (gameState.phase==='LOBBY') {
             showScreen('screen-lobby');
-            renderLobby();
-        } 
-        else if (gameState.phase === 'HINTING') {
+            const list = document.getElementById('players-list'); list.innerHTML = "";
+            gameState.players.forEach(p => {
+                const li = document.createElement('li'); li.className="player-item";
+                li.innerHTML = `<span>${p.nick}</span><span class="${p.isReady||p.isHost?'status-ready':'status-wait'}">${p.isHost?'HOST':(p.isReady?'OK':'...')}</span>`;
+                list.appendChild(li);
+            });
+            document.getElementById('player-count').innerText = `${gameState.players.length}/${gameState.maxPlayers}`;
+            if(isHost) {
+                const canStart = gameState.players.length >= 2 && gameState.players.every(x=>x.isHost || x.isReady);
+                document.getElementById('btn-start').disabled = !canStart;
+                document.getElementById('btn-start').className = canStart ? 'btn-primary' : 'btn-disabled';
+            }
+        } else if (gameState.phase==='HINTING') {
             showScreen('screen-hinting');
-            renderHinting();
-        }
-        else if (gameState.phase === 'GUESSING') {
+            const me = gameState.players.find(x=>x.peerId===peer.id);
+            if(me.role==='GUESSER') {
+                document.getElementById('view-guesser-wait').style.display='block';
+                document.getElementById('view-hinter-active').style.display='none';
+                document.getElementById('view-hinter-done').style.display='none';
+            } else {
+                document.getElementById('view-guesser-wait').style.display='none';
+                if(me.hintData.done) {
+                    document.getElementById('view-hinter-active').style.display='none';
+                    document.getElementById('view-hinter-done').style.display='block';
+                } else {
+                    document.getElementById('view-hinter-active').style.display='block';
+                    document.getElementById('view-hinter-done').style.display='none';
+                    document.getElementById('secret-target-text').innerText = gameState.targetNumber;
+                    document.getElementById('marker-val').innerText = gameState.targetNumber;
+                    document.getElementById('hinter-marker').style.left = ((gameState.targetNumber - 1) * 11.11) + "%";
+                    document.getElementById('cat-left').innerText = me.hintData.catLeft;
+                    document.getElementById('cat-right').innerText = me.hintData.catRight;
+                }
+            }
+        } else if (gameState.phase==='GUESSING') {
             showScreen('screen-guessing');
-            renderGuessing();
-        }
-        else if (gameState.phase === 'RESULT') {
+            const hinters = gameState.players.filter(x=>x.role==='HINTER');
+            const h = hinters[gameState.currentHintIndex];
+            const me = gameState.players.find(x=>x.peerId===peer.id);
+            document.getElementById('current-guesser-name').innerText = gameState.players.find(x=>x.role==='GUESSER').nick;
+            document.getElementById('guess-cat-left').innerText = h.hintData.catLeft;
+            document.getElementById('guess-cat-right').innerText = h.hintData.catRight;
+            document.getElementById('current-hint-word').innerText = h.hintData.word;
+            document.getElementById('hinter-name').innerText = h.nick;
+            
+            const isG = me.role==='GUESSER';
+            document.getElementById('guesser-controls').style.display = isG ? 'block' : 'none';
+            document.getElementById('spectator-msg').style.display = isG ? 'none' : 'block';
+            
+            const isLast = gameState.currentHintIndex === hinters.length - 1;
+            document.getElementById('btn-next-hint').style.display = (isG && !isLast) ? 'inline-block' : 'none';
+            document.getElementById('final-guess-area').style.display = (isG && isLast) ? 'block' : 'none';
+        } else if (gameState.phase==='RESULT') {
             showScreen('screen-result');
-            renderResult();
+            document.getElementById('result-target').innerText = gameState.targetNumber;
+            document.getElementById('result-guess').innerText = gameState.finalGuess;
+            const diff = Math.abs(gameState.targetNumber - gameState.finalGuess);
+            const win = diff === 0;
+            document.getElementById('result-title').innerText = win ? "IDEALNIE!" : "BLISKO!";
+            document.getElementById('result-title').style.color = win ? "#27ae60" : "#e67e22";
+            document.getElementById('result-msg').innerText = win ? "Zdobyliście 3 punkty!" : (diff <= 1 ? "Zdobyliście 1 punkt!" : "0 punktów.");
+            document.getElementById('host-restart').style.display = isHost ? 'block' : 'none';
         }
     }
-
-    function renderLobby() {
-        const list = document.getElementById('players-list');
-        list.innerHTML = "";
-        let allReady = true;
-        
-        gameState.players.forEach(p => {
-            const li = document.createElement('li');
-            li.className = "player-item";
-            let statusText = p.isHost ? "HOST" : (p.isReady ? "GOTOWY" : "CZEKA");
-            li.innerHTML = `<span>${p.nick} ${p.peerId === peer.id ? '(Ty)' : ''}</span><span class="${p.isReady || p.isHost ? 'status-ready' : 'status-wait'}">${statusText}</span>`;
-            list.appendChild(li);
-            if (!p.isHost && !p.isReady) allReady = false;
-        });
-
-        document.getElementById('player-count').innerText = `${gameState.players.length}/${gameState.maxPlayers}`;
-
-        if (isHost) {
-            const btn = document.getElementById('btn-start');
-            if (gameState.players.length >= 2 && allReady) {
-                btn.disabled = false;
-                btn.classList.remove('btn-disabled');
-                btn.classList.add('btn-primary');
-            } else {
-                btn.disabled = true;
-                btn.classList.add('btn-disabled');
-                btn.classList.remove('btn-primary');
-            }
-        } else {
-            // Reset button state logic for client
-            const btn = document.getElementById('btn-ready');
-            const myPlayer = gameState.players.find(p => p.peerId === peer.id);
-            if (myPlayer && myPlayer.isReady) {
-                btn.innerText = "Nie gotowy";
-                btn.classList.add('btn-primary');
-                btn.classList.remove('btn-secondary');
-            } else {
-                btn.innerText = "Jestem Gotowy";
-                btn.classList.add('btn-secondary');
-                btn.classList.remove('btn-primary');
-            }
-        }
-    }
-
-    function renderHinting() {
-        const me = gameState.players.find(p => p.peerId === peer.id);
-        
-        if (me.role === 'GUESSER') {
-            document.getElementById('view-guesser-wait').style.display = 'block';
-            document.getElementById('view-hinter-active').style.display = 'none';
-            document.getElementById('view-hinter-done').style.display = 'none';
-        } else {
-            // Jestem HINTER
-            document.getElementById('view-guesser-wait').style.display = 'none';
-            
-            if (me.hintData.submitted) {
-                document.getElementById('view-hinter-active').style.display = 'none';
-                document.getElementById('view-hinter-done').style.display = 'block';
-            } else {
-                document.getElementById('view-hinter-active').style.display = 'block';
-                document.getElementById('view-hinter-done').style.display = 'none';
-                
-                document.getElementById('secret-target').innerText = gameState.targetNumber;
-                document.getElementById('cat-left').innerText = me.hintData.catLeft;
-                document.getElementById('cat-right').innerText = me.hintData.catRight;
-            }
-        }
-    }
-
-    let selectedGuess = null;
-
-    function renderGuessing() {
-        const hinters = gameState.players.filter(p => p.role === 'HINTER' && p.hintData.submitted);
-        const currentHint = hinters[gameState.currentHintIndex];
-        const me = gameState.players.find(p => p.peerId === peer.id);
-        const guesser = gameState.players.find(p => p.role === 'GUESSER');
-
-        document.getElementById('current-guesser-name').innerText = guesser.nick;
-        
-        // Wyświetlanie aktualnej podpowiedzi
-        document.getElementById('guess-cat-left').innerText = currentHint.hintData.catLeft;
-        document.getElementById('guess-cat-right').innerText = currentHint.hintData.catRight;
-        document.getElementById('hinter-name').innerText = currentHint.nick;
-        document.getElementById('current-hint-word').innerText = currentHint.hintData.word;
-
-        const isGuesser = (me.role === 'GUESSER');
-        const isLastHint = (gameState.currentHintIndex === hinters.length - 1);
-
-        if (isGuesser) {
-            document.getElementById('guesser-controls').style.display = 'block';
-            document.getElementById('spectator-msg').style.display = 'none';
-            
-            const btnNext = document.getElementById('btn-next-hint');
-            const finalArea = document.getElementById('final-guess-area');
-            
-            if (isLastHint) {
-                btnNext.style.display = 'none';
-                finalArea.style.display = 'block';
-                renderGuessButtons();
-            } else {
-                btnNext.style.display = 'inline-block';
-                finalArea.style.display = 'none';
-            }
-        } else {
-            document.getElementById('guesser-controls').style.display = 'none';
-            document.getElementById('spectator-msg').style.display = 'block';
-        }
-    }
-
-    function renderGuessButtons() {
-        const container = document.getElementById('guess-buttons');
-        if (container.innerHTML !== "") return; // Nie generuj ponownie jeśli już są
-
-        for(let i=1; i<=10; i++) {
-            const b = document.createElement('button');
-            b.innerText = i;
-            b.className = 'guess-btn';
-            b.onclick = () => {
-                selectedGuess = i;
-                document.querySelectorAll('.guess-btn').forEach(btn => btn.classList.remove('selected'));
-                b.classList.add('selected');
-            };
-            container.appendChild(b);
-        }
-    }
-
-    function renderResult() {
-        const title = document.getElementById('result-title');
-        const msg = document.getElementById('result-msg');
-        
-        document.getElementById('result-target').innerText = gameState.targetNumber;
-        document.getElementById('result-guess').innerText = gameState.finalGuess;
-
-        if (gameState.winner) {
-            title.innerText = "ZWYCIĘSTWO!";
-            title.style.color = "#27ae60";
-            msg.innerText = "Gratulacje! Zgadliście liczbę!";
-        } else {
-            title.innerText = "PRZEGRANA";
-            title.style.color = "#e74c3c";
-            msg.innerText = `Niestety. Poprawna liczba to ${gameState.targetNumber}.`;
-        }
-
-        if (isHost) {
-            document.getElementById('host-restart').style.display = 'block';
-            document.getElementById('client-restart-msg').style.display = 'none';
-        } else {
-            document.getElementById('host-restart').style.display = 'none';
-            document.getElementById('client-restart-msg').style.display = 'block';
-        }
-    }
-
-    // --- AKCJE GRACZY ---
 
     function setupLobbyUI() {
-        if (isHost) {
-            document.getElementById('controls-host').style.display = 'block';
-            document.getElementById('controls-client').style.display = 'none';
-        } else {
-            document.getElementById('controls-host').style.display = 'none';
-            document.getElementById('controls-client').style.display = 'block';
-        }
+        document.getElementById('controls-host').style.display = isHost ? 'block' : 'none';
+        document.getElementById('controls-client').style.display = isHost ? 'none' : 'block';
     }
 
     function toggleReady() {
-        if (isHost) return;
-        const myPlayer = gameState.players.find(p => p.peerId === peer.id);
-        const newState = !myPlayer.isReady;
-        myConn.send({ type: 'READY_TOGGLE', state: newState });
+        const me = gameState.players.find(x=>x.peerId===peer.id);
+        const val = !me.isReady;
+        myConn.send({type:'READY', val});
     }
 
     function submitHint() {
         const word = document.getElementById('hint-input').value.trim();
-        if (!word) return alert("Wpisz słowo!");
-        
-        // Host aktualizuje od razu, klient wysyła
-        if (isHost) {
-            const me = gameState.players.find(p => p.peerId === peer.id);
-            me.hintData.word = word;
-            me.hintData.submitted = true;
-            checkAllHintsSubmitted();
-            broadcastState();
-        } else {
-            myConn.send({ type: 'SUBMIT_HINT', word: word });
-            // Lokalne UI update, żeby nie czekać na roundtrip
-            document.getElementById('view-hinter-active').style.display = 'none';
-            document.getElementById('view-hinter-done').style.display = 'block';
-        }
+        if(!word) return;
+        if(isHost) { 
+            const me = gameState.players.find(x=>x.peerId===peer.id);
+            me.hintData.word=word; me.hintData.done=true; checkHints(); broadcast();
+        } else myConn.send({type:'HINT', word});
     }
 
-    function nextHint() {
-        // Tylko dla hosta i klienta (jeśli jest zgadującym)
-        if (isHost) {
-            const hints = gameState.players.filter(p => p.role === 'HINTER' && p.hintData.submitted);
-             if (gameState.currentHintIndex < hints.length - 1) {
-                gameState.currentHintIndex++;
-                broadcastState();
-            }
-        } else {
-            myConn.send({ type: 'NEXT_HINT' });
-        }
+    function nextHint() { if(isHost) { gameState.currentHintIndex++; broadcast(); } else myConn.send({type:'NEXT'}); }
+
+    function updateGuessDisplay(v) {
+        document.getElementById('guess-val-display').innerText = v;
+        document.getElementById('guess-marker-visual').style.left = ((v-1)*11.11) + "%";
     }
 
     function confirmGuess() {
-        if (!selectedGuess) return alert("Wybierz liczbę!");
-        if (isHost) {
-            gameState.finalGuess = selectedGuess;
-            gameState.phase = 'RESULT';
-            gameState.winner = (gameState.finalGuess === gameState.targetNumber);
-            broadcastState();
-        } else {
-            myConn.send({ type: 'SUBMIT_GUESS', number: selectedGuess });
-        }
+        const val = parseInt(document.getElementById('guess-range').value);
+        if(isHost) { gameState.finalGuess=val; gameState.phase='RESULT'; broadcast(); }
+        else myConn.send({type:'GUESS', val});
     }
 
+    function restartGame() { if(isHost) { gameState.phase='LOBBY'; gameState.players.forEach(p=>p.isReady=false); broadcast(); } }
 </script>
 </body>
 </html>

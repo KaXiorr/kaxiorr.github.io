@@ -3,22 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Spektrum Ultimate</title>
+    <title>Spektrum Dark Edition</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #00d2ff;
-            --secondary: #3a7bd5;
-            --accent: #f1c40f;
-            --glass: rgba(255, 255, 255, 0.1);
-            --glass-border: rgba(255, 255, 255, 0.2);
+            --primary: #00f260;
+            --secondary: #0575e6;
+            --accent: #f5af19;
+            --glass: rgba(0, 0, 0, 0.6);
+            --glass-border: rgba(255, 255, 255, 0.1);
             --text: #ffffff;
         }
 
         body {
             font-family: 'Poppins', sans-serif;
-            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            /* Ciemniejszy background */
+            background: linear-gradient(-45deg, #0f0c29, #302b63, #24243e, #000000);
             background-size: 400% 400%;
             animation: gradientBG 15s ease infinite;
             color: var(--text);
@@ -26,6 +27,8 @@
             display: flex;
             height: 100vh;
             overflow: hidden;
+            /* Mocny cień pod tekstem (efekt obrysu) */
+            text-shadow: 2px 2px 0px #000000, 0 0 10px rgba(0,0,0,0.8);
         }
 
         @keyframes gradientBG {
@@ -37,7 +40,7 @@
         /* --- LAYOUT --- */
         .sidebar {
             width: 250px;
-            background: rgba(0, 0, 0, 0.3);
+            background: rgba(0, 0, 0, 0.4);
             backdrop-filter: blur(10px);
             padding: 20px;
             display: flex;
@@ -69,7 +72,7 @@
             padding: 40px;
             border-radius: 20px;
             border: 1px solid var(--glass-border);
-            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
             text-align: center;
             animation: fadeIn 0.5s ease-out;
         }
@@ -77,8 +80,8 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
         /* --- TYPOGRAPHY & UI --- */
-        h1 { font-weight: 900; letter-spacing: 3px; margin-bottom: 5px; text-shadow: 0 2px 10px rgba(0,0,0,0.3); }
-        h2 { font-weight: 700; color: var(--accent); margin-bottom: 20px; }
+        h1 { font-weight: 900; letter-spacing: 3px; margin-bottom: 5px; color: var(--accent); }
+        h2 { font-weight: 700; color: #fff; margin-bottom: 20px; }
         h3 { font-weight: 400; margin: 10px 0; }
 
         .screen { display: none; }
@@ -92,100 +95,80 @@
             font-weight: 700;
             font-family: 'Poppins', sans-serif;
             margin: 10px;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
             text-transform: uppercase;
             letter-spacing: 1px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            color: white;
+            text-shadow: 1px 1px 2px black;
+            border: 1px solid rgba(255,255,255,0.2);
         }
 
-        .btn-primary { background: linear-gradient(45deg, #11998e, #38ef7d); color: white; }
-        .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(56, 239, 125, 0.4); }
+        .btn-primary { background: linear-gradient(45deg, #00b09b, #96c93d); }
+        .btn-primary:hover { transform: scale(1.05); filter: brightness(1.2); }
         
-        .btn-secondary { background: linear-gradient(45deg, #ff9966, #ff5e62); color: white; }
-        .btn-secondary:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(255, 94, 98, 0.4); }
+        .btn-secondary { background: linear-gradient(45deg, #FF416C, #FF4B2B); }
+        .btn-secondary:hover { transform: scale(1.05); filter: brightness(1.2); }
 
-        .btn-disabled { background: #95a5a6; cursor: not-allowed; opacity: 0.6; }
+        .btn-disabled { background: #555; cursor: not-allowed; opacity: 0.6; filter: grayscale(1); }
 
-        input, select {
+        /* Poprawka INPUT i SELECT */
+        input[type="text"], input[type="number"] {
             padding: 15px;
             border-radius: 12px;
-            border: 2px solid rgba(255,255,255,0.1);
-            background: rgba(0,0,0,0.2);
+            border: 2px solid rgba(255,255,255,0.3);
+            background: rgba(0,0,0,0.5);
             color: white;
             font-size: 1.1em;
             width: 70%;
             text-align: center;
             outline: none;
-            transition: 0.3s;
             font-family: 'Poppins', sans-serif;
         }
-        input:focus { border-color: var(--accent); background: rgba(0,0,0,0.4); }
 
-        /* --- COMPONENTS --- */
-        .score-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 12px;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+        /* Tutaj naprawa widoczności tekstu w SELECT */
+        select {
+            padding: 15px;
+            border-radius: 12px;
+            border: 2px solid var(--accent);
+            background: #fff; /* Białe tło */
+            color: #000; /* Czarny tekst */
             font-size: 1.1em;
+            width: 75%;
+            text-align: center;
+            outline: none;
+            font-family: 'Poppins', sans-serif;
+            cursor: pointer;
+            font-weight: bold;
+            text-shadow: none; /* Bez cienia w środku selecta */
         }
-        
-        .status-item {
-            padding: 10px;
-            margin: 8px 0;
-            border-radius: 8px;
-            font-size: 0.9em;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        .status-done { background: rgba(46, 204, 113, 0.2); border: 1px solid #2ecc71; }
-        .status-pending { background: rgba(231, 76, 60, 0.2); border: 1px solid #e74c3c; animation: pulse 2s infinite; }
-
-        @keyframes pulse { 0% { opacity: 0.8; } 50% { opacity: 1; } 100% { opacity: 0.8; } }
-
-        .room-code {
-            font-size: 3em;
-            font-weight: 900;
-            letter-spacing: 5px;
-            color: var(--accent);
-            text-shadow: 0 0 20px rgba(241, 196, 15, 0.5);
-            margin: 20px 0;
-        }
+        option { background: #fff; color: #000; }
 
         /* --- SPECTRUM BAR --- */
         .spectrum-wrapper {
             position: relative;
             width: 100%;
             height: 50px;
-            background: linear-gradient(90deg, #ff6b6b 0%, #feca57 50%, #48dbfb 100%);
+            /* Ciemniejsze, bardziej neonowe kolory paska */
+            background: linear-gradient(90deg, #ff0055 0%, #ffcc00 50%, #00ccff 100%);
             border-radius: 25px;
             margin: 40px 0 20px;
-            box-shadow: inset 0 3px 10px rgba(0,0,0,0.3);
-            border: 4px solid rgba(255,255,255,0.2);
+            box-shadow: 0 0 20px rgba(0,0,0,0.5), inset 0 3px 10px rgba(0,0,0,0.3);
+            border: 3px solid rgba(255,255,255,0.1);
         }
 
         .marker {
             position: absolute;
-            width: 8px;
+            width: 6px;
             height: 60px;
             background: #fff;
-            top: -9px;
+            top: -8px;
+            border: 2px solid #000;
             border-radius: 4px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.5);
             transform: translateX(-50%);
-            transition: left 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+            transition: left 0.4s cubic-bezier(0.22, 1, 0.36, 1);
             z-index: 2;
-        }
-        
-        .marker::after {
-            content: '';
-            position: absolute;
-            top: -10px;
-            left: -6px;
-            border-left: 10px solid transparent;
-            border-right: 10px solid transparent;
-            border-top: 10px solid #fff;
+            pointer-events: none; /* Znacznik jest wizualny, nie klika się go */
         }
 
         .marker-label {
@@ -195,16 +178,18 @@
             transform: translateX(-50%);
             font-weight: 900;
             color: #fff;
-            background: var(--accent);
-            padding: 5px 10px;
-            border-radius: 10px;
-            box-shadow: 0 5px 10px rgba(0,0,0,0.2);
+            background: #000;
+            padding: 5px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--accent);
+            white-space: nowrap;
         }
 
+        /* --- SLIDER FIX (Niewidzialny) --- */
         .guess-slider {
             -webkit-appearance: none;
             width: 100%;
-            height: 50px;
+            height: 50px; /* Taka sama wysokość jak pasek */
             background: transparent;
             position: absolute;
             top: 0;
@@ -212,38 +197,46 @@
             z-index: 10;
             cursor: pointer;
             margin: 0;
+            opacity: 0; /* To sprawia, że suwak jest niewidoczny, ale działa! */
         }
-        .guess-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 40px;
-            height: 40px;
-            background: rgba(255,255,255,0.5);
-            border: 2px solid white;
-            border-radius: 50%;
-            cursor: pointer;
-            box-shadow: 0 0 15px rgba(255,255,255,0.8);
-        }
+        /* Dla pewności usuwamy stylizację thumba, choć opacity 0 i tak to ukrywa */
+        .guess-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 50px; height: 50px; background: red; }
 
         .category-box {
-            background: rgba(0,0,0,0.4);
+            background: rgba(0,0,0,0.6);
             padding: 20px;
             margin: 20px 0;
             border-radius: 15px;
             display: flex;
             justify-content: space-between;
             font-weight: 700;
-            font-size: 1.2em;
+            font-size: 1.1em;
             text-transform: uppercase;
             border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        }
+
+        .score-row {
+            display: flex; justify-content: space-between; padding: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 1.1em;
         }
         
-        #error-msg { color: #ff6b6b; font-weight: bold; min-height: 20px; }
+        .status-item {
+            padding: 10px; margin: 8px 0; border-radius: 8px; font-size: 0.9em;
+            display: flex; align-items: center; justify-content: space-between;
+            background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1);
+        }
+        .status-done { color: #2ecc71; border-color: #2ecc71; }
+        .status-pending { color: #e74c3c; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
+
+        .room-code { font-size: 3em; font-weight: 900; letter-spacing: 5px; color: var(--accent); margin: 20px 0; }
+        #error-msg { color: #ff4757; font-weight: bold; min-height: 20px; text-shadow: none; background: rgba(0,0,0,0.5); display: inline-block; padding: 0 10px; border-radius: 5px;}
 
         @media (max-width: 800px) {
             body { flex-direction: column; overflow-y: scroll; height: auto; }
             .sidebar { width: 100%; height: auto; padding: 10px; order: 2; }
             .main-content { padding: 10px; order: 1; min-height: 80vh; }
-            .game-card { padding: 20px; }
             .category-box { flex-direction: column; gap: 10px; }
         }
     </style>
@@ -254,13 +247,13 @@
         <h2>🏆 Tabela</h2>
         <div id="score-table"></div>
         <div style="margin-top: auto; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
-            <p>Runda: <span id="ui-current-round" style="color:var(--accent); font-weight:bold;">0</span> / <span id="ui-total-rounds">0</span></p>
+            <p>Runda: <span id="ui-current-round" style="color:var(--accent);">0</span> / <span id="ui-total-rounds">0</span></p>
         </div>
     </div>
 
     <div class="main-content">
         <div class="game-card">
-            <h1>SPEKTRUM <span style="color:var(--accent)">ULTIMATE</span></h1>
+            <h1>SPEKTRUM <span style="color:var(--primary); font-size:0.6em; vertical-align: middle;">DARK</span></h1>
             <div id="error-msg"></div>
 
             <div id="screen-menu" class="screen active">
@@ -271,14 +264,14 @@
             <div id="screen-host-setup" class="screen">
                 <h2>Konfiguracja</h2>
                 <input type="text" id="host-nick" placeholder="Twój Nick" maxlength="15">
-                <br>
-                <label>Liczba rund:</label>
+                <br><br>
+                <label>Liczba rund:</label><br>
                 <select id="total-rounds">
                     <option value="2">2 Rundy (Szybka)</option>
                     <option value="3" selected>3 Rundy (Standard)</option>
                     <option value="5">5 Rund (Długa)</option>
                 </select>
-                <br>
+                <br><br>
                 <button class="btn-secondary" onclick="showScreen('screen-menu')">Wróć</button>
                 <button class="btn-primary" onclick="createGame()">Utwórz Lobby</button>
             </div>
@@ -287,21 +280,21 @@
                 <h2>Dołączanie</h2>
                 <input type="text" id="join-nick" placeholder="Twój Nick" maxlength="15">
                 <input type="number" id="join-code" placeholder="4-cyfrowy kod">
-                <br>
+                <br><br>
                 <button class="btn-secondary" onclick="showScreen('screen-menu')">Wróć</button>
                 <button class="btn-primary" onclick="joinGame()">Dołącz</button>
             </div>
 
             <div id="screen-lobby" class="screen">
-                <h3>Kod Pokoju:</h3>
+                <h3>KOD POKOJU:</h3>
                 <div id="display-code" class="room-code">...</div>
-                <p>Oczekiwanie na graczy:</p>
+                <p>GRACZE W LOBBY:</p>
                 <div id="lobby-list" style="display:flex; flex-wrap:wrap; justify-content:center; gap:10px;"></div>
                 
-                <div id="controls-host" style="display:none; margin-top:20px;">
+                <div id="controls-host" style="display:none; margin-top:30px;">
                     <button id="btn-start" class="btn-disabled" onclick="serverStartGame()" disabled>Rozpocznij Grę</button>
                 </div>
-                <div id="controls-client" style="display:none; margin-top:20px;">
+                <div id="controls-client" style="display:none; margin-top:30px;">
                     <button id="btn-ready" class="btn-secondary" onclick="toggleReady()">Zgłoś Gotowość</button>
                 </div>
             </div>
@@ -309,85 +302,87 @@
             <div id="screen-hinting" class="screen">
                 <div id="view-guesser-wait">
                     <h2>Jesteś Zgadującym!</h2>
-                    <p style="font-size: 1.2em;">Zrelaksuj się. Twoja drużyna wymyśla podpowiedzi.</p>
+                    <p style="opacity:0.8">Poczekaj, aż Twoja drużyna wymyśli podpowiedź.</p>
                     <div style="font-size: 4em; animation: pulse 2s infinite;">🤫</div>
                 </div>
 
                 <div id="view-hinter-active" style="display:none;">
-                    <h3>Twoja Tajna Liczba</h3>
+                    <h3>TWOJA TAJNA LICZBA</h3>
                     <div class="spectrum-wrapper">
                         <div id="hint-marker" class="marker"><span class="marker-label" id="hint-marker-label">?</span></div>
                     </div>
                     
-                    <p>Twoja kategoria:</p>
+                    <p>KATEGORIA:</p>
                     <div class="category-box">
-                        <span id="cat-left" style="color:#ff6b6b">...</span>
-                        <span id="cat-right" style="color:#48dbfb">...</span>
+                        <span id="cat-left" style="color:#ff4757">...</span>
+                        <span id="cat-right" style="color:#00ccff">...</span>
                     </div>
 
-                    <input type="text" id="hint-input" placeholder="Wpisz słowo pasujące do liczby...">
-                    <br>
-                    <button class="btn-primary" onclick="clientSubmitHint()">Wyślij Podpowiedź</button>
+                    <input type="text" id="hint-input" placeholder="Wpisz słowo...">
+                    <br><br>
+                    <button class="btn-primary" onclick="clientSubmitHint()">Wyślij</button>
                 </div>
             </div>
 
             <div id="screen-guessing" class="screen">
-                <p>Zgaduje: <b id="ui-guesser-name" style="color:var(--accent); font-size:1.2em;"></b></p>
+                <p>ZGADUJE: <b id="ui-guesser-name" style="color:var(--accent);"></b></p>
                 
                 <div class="category-box">
-                    <span id="guess-cat-left" style="color:#ff6b6b"></span>
-                    <span id="guess-cat-right" style="color:#48dbfb"></span>
+                    <span id="guess-cat-left" style="color:#ff4757"></span>
+                    <span id="guess-cat-right" style="color:#00ccff"></span>
                 </div>
 
-                <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 10px; margin: 20px 0;">
-                    <p style="margin:0; font-size:0.8em; opacity:0.7;">Podpowiedź gracza <span id="ui-hinter-name"></span>:</p>
-                    <div id="ui-hint-word" style="font-size: 2.5em; font-weight: 900; color: var(--accent); text-transform: uppercase;"></div>
+                <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; margin: 20px 0; border: 1px solid var(--accent);">
+                    <p style="margin:0; font-size:0.7em; text-transform:uppercase;">Podpowiedź od: <span id="ui-hinter-name"></span></p>
+                    <div id="ui-hint-word" style="font-size: 2.2em; font-weight: 900; color: var(--accent); text-transform: uppercase; margin-top:5px;"></div>
                 </div>
 
                 <div id="guesser-controls" style="display:none;">
-                    <button id="btn-next" class="btn-secondary" onclick="clientRequestNext()">Następna Podpowiedź ➡</button>
+                    <button id="btn-next" class="btn-secondary" onclick="clientRequestNext()">Następna ➡</button>
                     
                     <div id="final-guess-ui" style="display:none;">
-                        <p>Przesuń suwak i strzelaj!</p>
+                        <p>PRZESUŃ SUWAK I STRZELAJ!</p>
                         <div class="spectrum-wrapper">
                             <input type="range" min="1" max="100" value="50" class="guess-slider" id="guess-range" oninput="updateGuessMarker(this.value)">
-                            <div id="guess-marker-visual" class="marker" style="left: 50%; pointer-events: none;">
+                            
+                            <div id="guess-marker-visual" class="marker" style="left: 50%;">
                                 <span class="marker-label" id="guess-val-display">50</span>
                             </div>
                         </div>
+                        <br>
                         <button class="btn-primary" onclick="clientSubmitGuess()">ZGADUJĘ!</button>
                     </div>
                 </div>
             </div>
 
             <div id="screen-result" class="screen">
-                <h2 id="res-title">WYNIK</h2>
+                <h2 id="res-title" style="font-size: 2.5em; text-transform: uppercase;">WYNIK</h2>
                 
-                <div class="spectrum-wrapper" style="margin-bottom: 50px;">
-                    <div id="res-marker-target" class="marker" style="background:var(--accent); z-index:1;">
-                        <span class="marker-label" style="background:#fff; color:#333;">CEL</span>
+                <div class="spectrum-wrapper" style="margin-bottom: 60px;">
+                    <div id="res-marker-target" class="marker" style="background:var(--accent); z-index:1; border-color:white;">
+                        <span class="marker-label" style="background:var(--accent); color:black;">CEL</span>
                     </div>
-                    <div id="res-marker-guess" class="marker" style="background:#fff; z-index:2; top:15px; height:35px;">
-                        <span class="marker-label" style="top:35px; background:#333;">TY</span>
+                    <div id="res-marker-guess" class="marker" style="background:#fff; z-index:2; top:10px; height:40px;">
+                        <span class="marker-label" style="top:40px; background:#fff; color:black;">TY</span>
                     </div>
                 </div>
 
                 <div style="display: flex; justify-content: center; gap: 40px; font-size: 1.5em; margin-bottom: 20px;">
-                    <div>Cel: <b id="res-target-val"></b></div>
+                    <div>Cel: <b id="res-target-val" style="color:var(--accent)"></b></div>
                     <div>Strzał: <b id="res-guess-val"></b></div>
                 </div>
 
-                <div id="res-points" style="font-size: 2em; color: var(--accent); font-weight:900; text-shadow: 0 0 10px rgba(0,0,0,0.5);"></div>
+                <div id="res-points" style="font-size: 2.5em; color: var(--primary); font-weight:900;"></div>
 
                 <div id="host-next-turn" style="display:none;">
                     <button class="btn-primary" onclick="serverNextTurn()">Dalej ➡</button>
                 </div>
-                <p id="client-wait-msg" style="display:none; opacity:0.7;">Lider zarządza grą...</p>
+                <p id="client-wait-msg" style="display:none; opacity:0.7;">Oczekiwanie na lidera...</p>
             </div>
 
             <div id="screen-final" class="screen">
-                <h1 style="font-size: 3em;">KONIEC GRY</h1>
-                <h2 id="winner-name" style="color:var(--accent)"></h2>
+                <h1 style="font-size: 3em; color: var(--accent);">KONIEC</h1>
+                <h2 id="winner-name"></h2>
                 <div id="final-leaderboard" style="margin: 30px 0;"></div>
                 <div id="host-restart" style="display:none;">
                     <button class="btn-primary" onclick="location.reload()">Zagraj Ponownie</button>
@@ -403,7 +398,6 @@
     </div>
 
 <script>
-    // --- BAZA KATEGORII (BARDZIEJ SZCZEGÓŁOWA) ---
     const CATS = [
         ["Najgorszy dodatek do pizzy", "Najlepszy dodatek do pizzy"],
         ["Tani prezent ślubny", "Drogi prezent ślubny"],
@@ -443,10 +437,9 @@
         ["Najgorszy smak lodów", "Najlepszy smak lodów"]
     ];
 
-    const PREFIX = "spektrum-ultimate-";
+    const PREFIX = "spektrum-dark-";
     let peer, myConn, hostConns = [], isHost = false, myNick = "";
     
-    // Zwiększyłem zakres do 1-100 dla większej precyzji
     let state = {
         phase: 'LOBBY',
         players: [],
@@ -488,7 +481,7 @@
                 });
             });
         });
-        peer.on('error', () => createGame()); // Retry on ID collision
+        peer.on('error', () => createGame());
     }
 
     function joinGame() {
@@ -537,7 +530,6 @@
 
     function newTurn() {
         state.phase = 'HINTING';
-        // Skala 1-100
         state.target = Math.floor(Math.random()*100) + 1;
         state.hintIdx = 0;
         state.players.forEach((p, i) => {
@@ -552,7 +544,6 @@
     }
 
     function checkAllHints() {
-        // Jeśli wszyscy podpowiadacze skończyli -> GUESSING
         if(state.players.filter(p => p.role === 'HINTER' && !p.hintDone).length === 0) {
             state.phase = 'GUESSING';
         }
@@ -562,12 +553,10 @@
         let guesser = state.players[state.turnIndex];
         let diff = Math.abs(state.target - state.guess);
         let pts = 0;
-        
-        // Punktacja dla skali 100
-        if(diff <= 2) pts = 4;       // Idealnie (bullseye)
-        else if(diff <= 8) pts = 3;  // Bardzo blisko
-        else if(diff <= 15) pts = 2; // Blisko
-        else if(diff <= 25) pts = 1; // W miarę
+        if(diff <= 2) pts = 4;
+        else if(diff <= 8) pts = 3;
+        else if(diff <= 15) pts = 2;
+        else if(diff <= 25) pts = 1;
 
         guesser.score += pts;
         state.lastPoints = pts;
@@ -611,7 +600,7 @@
 
     // --- RENDER ---
     function render() {
-        // Tabela wyników (Lewa)
+        // Tabela wyników
         const sorted = [...state.players].sort((a,b)=>b.score-a.score);
         document.getElementById('score-table').innerHTML = sorted.map((p, i) => 
             `<div class="score-row">
@@ -623,13 +612,13 @@
         document.getElementById('ui-current-round').innerText = state.currentRound;
         document.getElementById('ui-total-rounds').innerText = state.totalRounds;
 
-        // Statusy (Prawa)
+        // Statusy
         const statusList = document.getElementById('status-list');
         if(state.phase === 'HINTING') {
             statusList.innerHTML = state.players.filter(p=>p.role==='HINTER').map(p => 
                 `<div class="status-item ${p.hintDone?'status-done':'status-pending'}">
                     <span>${p.nick}</span>
-                    <span>${p.hintDone?'OK':'Myśli...'}</span>
+                    <span>${p.hintDone?'GOTOWY':'Myśli...'}</span>
                 </div>`
             ).join('');
         } else if(state.phase === 'GUESSING') {
@@ -639,11 +628,11 @@
             statusList.innerHTML = "";
         }
 
-        // Fazy gry
+        // Fazy
         if(state.phase === 'LOBBY') {
             showScreen('screen-lobby');
             document.getElementById('lobby-list').innerHTML = state.players.map(p => 
-                `<div style="background:rgba(255,255,255,0.1); padding:10px 20px; border-radius:50px; border:1px solid ${p.ready?'#2ecc71':'#e74c3c'}">
+                `<div style="background:rgba(0,0,0,0.4); padding:10px 20px; border-radius:50px; border:1px solid ${p.ready?'#2ecc71':'#e74c3c'}">
                     ${p.nick} ${p.isHost ? '👑' : ''} ${p.ready ? '✅' : '⏳'}
                 </div>`
             ).join('');

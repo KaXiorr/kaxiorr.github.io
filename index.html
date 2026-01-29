@@ -553,9 +553,10 @@
         let guesser = state.players[state.turnIndex];
         let diff = Math.abs(state.target - state.guess);
         let pts = 0;
-        if(diff <= 2) pts = 4;
-        else if(diff <= 8) pts = 3;
-        else if(diff <= 15) pts = 2;
+        if(diff <= 1) pts = 7;
+        else if(diff <= 5) pts = 5;
+        else if(diff <= 10) pts = 4;
+        else if(diff <= 15) pts = 3;
         else if(diff <= 25) pts = 1;
 
         guesser.score += pts;
